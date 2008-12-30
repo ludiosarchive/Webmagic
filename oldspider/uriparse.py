@@ -1,3 +1,5 @@
+# from http://bugs.python.org/issue1462525
+
 """An extensible URI parsing library
 
   A uri parsing library that strives to be STD66 (aka RFC3986)
@@ -49,7 +51,9 @@ Usage:
 
 """
 
+import re
 
+URI_SPLIT_RE = '^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?'
 def urisplit(uri):
     """
        Basic URI Parser according to STD66 aka RFC3986
@@ -58,10 +62,9 @@ def urisplit(uri):
        ('scheme', 'authority', 'path', 'query', 'fragment') 
 
     """
-    import re
     # regex straight from STD 66 section B
-    regex = '^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?'
-    p = re.match(regex, uri).groups()
+
+    p = URI_SPLIT_RE.match(uri).groups()
     scheme, authority, path, query, fragment = p[1], p[3], p[4], p[6], p[8]
     #if not path: path = None
     return (scheme, authority, path, query, fragment) 

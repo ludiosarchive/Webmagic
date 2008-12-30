@@ -53,7 +53,7 @@ Usage:
 
 import re
 
-URI_SPLIT_RE = re.compile('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?')
+URI_SPLIT_RE = re.compile(r'^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?')
 def urisplit(uri):
     """
        Basic URI Parser according to STD66 aka RFC3986
@@ -66,6 +66,8 @@ def urisplit(uri):
 
     p = URI_SPLIT_RE.match(uri).groups()
     scheme, authority, path, query, fragment = p[1], p[3], p[4], p[6], p[8]
+    if scheme:
+        scheme = scheme.lower()
     #if not path: path = None
     return (scheme, authority, path, query, fragment) 
 
@@ -295,7 +297,7 @@ class URIParser(object):
     # these work on any URI 
     def scheme_of(self, uri):
         """Return the scheme of any URI."""
-        return uri.split(':')[0]
+        return uri.split(':')[0].lower()
 
     def info_of(self, uri):
         """Return the non-scheme part of any URI."""
@@ -357,6 +359,9 @@ def _test():
         # Simple tests
         'http://user:pass@host:8080/path?query=result#fragment':
             ('http', 'user', 'pass', 'host', '8080', '/path', 
+	        'query=result', 'fragment'),
+        'HTTP://user:pass@host:8080/path?query=result#fragment':
+            ('http', 'user', 'pass', 'host', '8080', '/path',
 	        'query=result', 'fragment'),
         'http://user@host:8080/path?query=result#fragment':
             ('http', 'user', None,'host','8080', '/path', 'query=result', 'fragment'),

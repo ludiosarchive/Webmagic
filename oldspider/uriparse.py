@@ -53,7 +53,7 @@ Usage:
 
 import re
 
-URI_SPLIT_RE = '^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?'
+URI_SPLIT_RE = re.compile('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?')
 def urisplit(uri):
     """
        Basic URI Parser according to STD66 aka RFC3986

@@ -458,7 +458,6 @@ def _test():
     
     print ("%d Tests finished." % (len(parsetests)+len(jointests))),
     print "%d failures." % failures
-    sys.exit(failures)
 
 if __name__ == '__main__':
     _test()

@@ -358,7 +358,11 @@ def _pathjoin(a,b):
 	if not a or not b:
 		return a or b
 	elif not b.startswith('/'):
-		return a+'/'+b
+		# TODO: is this really the right thing to do? check FF3 behavior in detail with regards to slash duplication.
+		if a.endswith('/'):
+			return a+b
+		else:
+			return a+'/'+b
 	else:
 		return b
 
@@ -485,6 +489,12 @@ def _test():
 		"about:blank"   : "about:blank",
 	}
 
+	base2 = "http://a/"
+	jointests2 = {
+		"g"			:	"http://a/g",
+		"/g"		:	"http://a/g",
+	}
+
 	for relref in jointests:
 		result = urljoin(base, relref)
 		print ("%s + %s = %s : " % (repr(base), repr(relref), repr(result))),
@@ -497,7 +507,16 @@ def _test():
 		else:
 			print "Failed.\n  expected: %s " % repr(jointests[relref])
 			failures += 1
-	
+
+	for relref in jointests2:
+		result = urljoin(base2, relref)
+		print ("%s + %s = %s : " % (repr(base), repr(relref), repr(result))),
+		if result == jointests2[relref]:
+			print "passed"
+		else:
+			print "Failed.\n  expected: %s " % repr(jointests2[relref])
+			failures += 1
+
 	print ("%d Tests finished." % (len(parsetests)+len(jointests))),
 	print "%d failures." % failures
 	return failures

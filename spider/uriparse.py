@@ -55,10 +55,36 @@ import re
 URI_SPLIT_RE = re.compile(r'^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?')
 def urisplit(uri):
 	"""
-	   Basic URI Parser according to STD66 aka RFC3986
+	Basic URI Parser according to STD66 aka RFC3986
 
-	   >>> urisplit("scheme://authority/path?query#fragment")
-	   ('scheme', 'authority', '/path', 'query', 'fragment')
+	>>> urisplit("scheme://authority/path?query#fragment")
+	('scheme', 'authority', '/path', 'query', 'fragment')
+
+	>>> urisplit("scheme://authority/path?query#")
+	('scheme', 'authority', '/path', 'query', '')
+
+	>>> urisplit("scheme://authority/path?query")
+	('scheme', 'authority', '/path', 'query', None)
+
+	>>> urisplit("scheme://authority/path?")
+	('scheme', 'authority', '/path', '', None)
+
+	>>> urisplit("scheme://authority/path")
+	('scheme', 'authority', '/path', None, None)
+
+	>>> urisplit("scheme://authority/")
+	('scheme', 'authority', '/', None, None)
+
+	>>> urisplit("scheme://authority")
+	('scheme', 'authority', '', None, None)
+
+	# reversability tests
+
+	>>> uriunsplit(urisplit("scheme://authority"))
+	'scheme://authority'
+
+	>>> uriunsplit(urisplit("scheme://authority/"))
+	'scheme://authority/'
 
 	"""
 	# regex straight from STD 66 section B

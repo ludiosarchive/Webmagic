@@ -227,8 +227,8 @@ class URLParser:
 		return (user, passwd, host, port, path, query, frag)
 
 	def unparse(self, pieces):
-		authority = unparse_authority(pieces[:4])
-		return unparse_uri(('', authority, pieces[4], pieces[5], pieces[6]))
+		authority = join_authority(pieces[:4])
+		return uriunsplit(('', authority, pieces[4], pieces[5], pieces[6]))
 
 class HttpURLParser(URLParser):
 	"""Internal class to hold the defaults of HTTP URLs"""
@@ -283,7 +283,7 @@ class MailtoURIParser(URLParser):
 
 	def unparse(self, pieces):
 		path = pieces[0] + '@' + pieces[1]
-		return unparse_uri(('', None, path, pieces[2], pieces[3]))
+		return uriunsplit(('', None, path, pieces[2], pieces[3]))
 
 
 class URIParser(object):

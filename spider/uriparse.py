@@ -78,6 +78,14 @@ def urisplit(uri):
 	>>> urisplit("scheme://authority")
 	('scheme', 'authority', '', None, None)
 
+	# auto-scheme-lowercasing
+
+	>>> urisplit("SCHEME://authority")
+	('scheme', 'authority', '', None, None)
+
+	>>> urisplit("ScHeMe://authority")
+	('scheme', 'authority', '', None, None)
+
 	# reversability tests
 
 	>>> uriunsplit(urisplit("scheme://authority"))
@@ -90,6 +98,8 @@ def urisplit(uri):
 	# regex straight from STD 66 section B
 	p = URI_SPLIT_RE.match(uri).groups()
 	scheme, authority, path, query, fragment = p[1], p[3], p[4], p[6], p[8]
+	if not scheme is None:
+		scheme = scheme.lower()
 	#if not path: path = None
 	return (scheme, authority, path, query, fragment) 
 

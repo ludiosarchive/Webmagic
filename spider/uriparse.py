@@ -417,7 +417,9 @@ def _test():
 		'http://host/path?query=result#fragment':
 			('http', None, None, 'host', '80', '/path', 'query=result', 'fragment'),
 		'http://host/path?query=result':
-			('http', None, None, 'host', '80', '/path','query=result',None),
+			('http', None, None, 'host', '80', '/path', 'query=result', None),
+		'http://host/path?query=result#':
+			('http', None, None, 'host', '80', '/path', 'query=result', ''),
 		'http://host/path#fragment':
 			('http', None, None, 'host', '80', '/path', None, 'fragment'),
 		'http://host/path':

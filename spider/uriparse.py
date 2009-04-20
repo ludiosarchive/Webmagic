@@ -1,3 +1,5 @@
+# XXX LICENSE is unknown, copied from http://bugs.python.org/issue1462525
+
 """An extensible URI parsing library
 
   A uri parsing library that strives to be STD66 (aka RFC3986)

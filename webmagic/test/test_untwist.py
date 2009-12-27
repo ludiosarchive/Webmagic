@@ -2,6 +2,7 @@ import base64
 
 from twisted.trial import unittest
 
+from twisted.internet.task import Clock
 from twisted.web.test.test_web import DummyChannel, DummyRequest
 from twisted.web import http, server
 
@@ -116,7 +117,7 @@ class BetterResourceTests(unittest.TestCase):
 		req.uri = '/'
 
 		r = Leaf()
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, Leaf), res)
 
@@ -126,7 +127,7 @@ class BetterResourceTests(unittest.TestCase):
 		req.uri = '/'
 
 		r = NonLeafWithIndexChild()
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, Leaf), res)
 
@@ -138,7 +139,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, Leaf), res)
 
@@ -150,7 +151,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
@@ -163,7 +164,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithIndexChild()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
@@ -176,7 +177,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithChildChild()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, HelpfulNoResource), res)
 
@@ -195,7 +196,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		nothello = Leaf()
 		r.putChild('nothello', nothello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, HelpfulNoResource), res)
 
@@ -207,7 +208,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, HelpfulNoResource), res)
 
@@ -219,7 +220,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r)
+		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, HelpfulNoResource), res)
 
@@ -234,7 +235,7 @@ class BetterResourceTests(unittest.TestCase):
 #		r = NonLeaf()
 #		hello = Leaf()
 #		r.putChild('hello', hello)
-#		site = server.Site(r)
+#		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assert_(isinstance(res, RedirectingResource), res)
 #		self.aE("/hello/", res._location)
@@ -245,7 +246,7 @@ class BetterResourceTests(unittest.TestCase):
 #		req.uri = '//'
 #
 #		r = Leaf()
-#		site = server.Site(r)
+#		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assert_(isinstance(res, RedirectingResource), res)
 #		self.aE("/", res._location)
@@ -256,7 +257,7 @@ class BetterResourceTests(unittest.TestCase):
 #		req.uri = '//'
 #
 #		r = NonLeafWithIndexChild()
-#		site = server.Site(r)
+#		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assert_(isinstance(res, RedirectingResource), res)
 #		self.aE("/", res._location)

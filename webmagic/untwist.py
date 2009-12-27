@@ -1,3 +1,8 @@
+"""
+Various features to make using twisted.web to build real websites
+a bit more sane.
+"""
+
 import cgi
 import binascii
 

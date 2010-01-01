@@ -93,7 +93,6 @@ class NonLeaf(BetterResource):
 
 
 class NonLeafWithChildChild(BetterResource):
-	"""Notice how this is not a leaf, and has no render methods."""
 	def __init__(self):
 		BetterResource.__init__(self)
 		child = Leaf()
@@ -102,10 +101,17 @@ class NonLeafWithChildChild(BetterResource):
 
 
 class NonLeafWithIndexChild(BetterResource):
-	"""Notice how this is not a leaf, and has no render methods."""
 	def __init__(self):
 		BetterResource.__init__(self)
 		index = Leaf()
+		self.putChild('', index)
+
+
+
+class NonLeafWithNonLeafIndexChild(BetterResource):
+	def __init__(self):
+		BetterResource.__init__(self)
+		index = NonLeafWithIndexChild()
 		self.putChild('', index)
 
 
@@ -181,6 +187,31 @@ class BetterResourceTests(unittest.TestCase):
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
+
+
+	def test_redirectedToPathPlusSlash3(self): # For non-leaf -> non-leaf
+		req = DummyRequest(['hello'])
+		req.uri = '/hello'
+
+		r = NonLeaf()
+		hello = NonLeafWithNonLeafIndexChild()
+		r.putChild('hello', hello)
+		site = server.Site(r, clock=Clock())
+		res = site.getResourceFor(req)
+		self.assert_(isinstance(res, RedirectingResource), res)
+		self.aE("/hello/", res._location)
+
+
+	def test_normalRequestToNonLeafNonLeafNotRedirected(self):
+		req = DummyRequest(['hello', '', '']) # ugh. need to do integration testing and send real requests
+		req.uri = '/hello/'
+
+		r = NonLeaf()
+		hello = NonLeafWithNonLeafIndexChild()
+		r.putChild('hello', hello)
+		site = server.Site(r, clock=Clock())
+		res = site.getResourceFor(req)
+		self.assert_(isinstance(res, Leaf), res)
 
 
 	def test_notRedirectedBecauseResourceIsNotBetter1(self): # For leaf

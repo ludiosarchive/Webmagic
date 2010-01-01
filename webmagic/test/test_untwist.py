@@ -4,7 +4,7 @@ from twisted.trial import unittest
 
 from twisted.internet.task import Clock
 from twisted.web.test.test_web import DummyChannel, DummyRequest
-from twisted.web import http, server
+from twisted.web import http, server, resource
 
 
 from webmagic.untwist import (
@@ -110,6 +110,19 @@ class NonLeafWithIndexChild(BetterResource):
 
 
 
+class LeafPlainResource(resource.Resource):
+	isLeaf = True
+	def __init__(self):
+		resource.Resource.__init__(self)
+
+
+
+class NonLeafPlainResource(resource.Resource):
+	def __init__(self):
+		resource.Resource.__init__(self)
+
+
+
 class BetterResourceTests(unittest.TestCase):
 
 	def test_rootURLNotRedirectedWithLeafRoot(self):
@@ -144,7 +157,7 @@ class BetterResourceTests(unittest.TestCase):
 		self.assert_(isinstance(res, Leaf), res)
 
 
-	def test_redirectedToPathPlusSlash(self):
+	def test_redirectedToPathPlusSlash1(self): # For leaf
 		req = DummyRequest(['hello'])
 		req.uri = '/hello'
 
@@ -157,7 +170,7 @@ class BetterResourceTests(unittest.TestCase):
 		self.aE("/hello/", res._location)
 
 
-	def test_redirectedToPathPlusSlashForNonLeafResource(self):
+	def test_redirectedToPathPlusSlash2(self): # For non-leaf
 		req = DummyRequest(['hello'])
 		req.uri = '/hello'
 
@@ -168,6 +181,30 @@ class BetterResourceTests(unittest.TestCase):
 		res = site.getResourceFor(req)
 		self.assert_(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
+
+
+	def test_notRedirectedBecauseResourceIsNotBetter1(self): # For leaf
+		req = DummyRequest(['hello'])
+		req.uri = '/hello'
+
+		r = NonLeaf()
+		hello = LeafPlainResource()
+		r.putChild('hello', hello)
+		site = server.Site(r, clock=Clock())
+		res = site.getResourceFor(req)
+		self.assert_(isinstance(res, LeafPlainResource), res)
+
+
+	def test_notRedirectedBecauseResourceIsNotBetter2(self): # For non-leaf
+		req = DummyRequest(['hello'])
+		req.uri = '/hello'
+
+		r = NonLeaf()
+		hello = NonLeafPlainResource()
+		r.putChild('hello', hello)
+		site = server.Site(r, clock=Clock())
+		res = site.getResourceFor(req)
+		self.assert_(isinstance(res, NonLeafPlainResource), res)
 
 
 	def test_404forStrangeResourceBecauseNoIndex(self):

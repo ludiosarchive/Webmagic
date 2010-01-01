@@ -159,27 +159,34 @@ class BetterResource(resource.Resource):
 		The implementation is not eager to add slashes first. If the resource
 		won't be found anyway, it returns 404s instead of redirects.
 		"""
-		##print 'looking at path', path
-		##print request.prepath, request.postpath, request.uri
-		##print request.prePathURL(), request.URLPath()
+		##noisy = False
+
+		##if noisy: print "XXX", self, 'looking at path', path
+		##if noisy: print "XXX", request.prepath, request.postpath, request.uri
+		##if noisy: print "XXX", request.prePathURL(), request.URLPath()
 
 		# 404 requests for which there is no suitable Resource
 		if not path in self.children:
+			##if noisy: print "XXX Returning 404 because no suitable resource"
 			return HelpfulNoResource()
 
 		# 404 requests that have extra crud
 		if self.children[path].isLeaf and request.postpath not in ([], ['']):
+			##if noisy: print "XXX Returning 404 because request has extra crud"
 			return HelpfulNoResource()
 
 		# Redirect from /page -> /page/ and so on. This needs to happen even
 		# if not `self.children[path].isLeaf`.
-		if request.postpath == [] and request.prepath != ['']:
+		# Note: static.File instances are not `isLeaf`
+		if request.postpath == [] and request.prepath[-1] != '' and isinstance(self.children[path], BetterResource):
 			# Avoid redirecting if the '' child for the target Resource doesn't exist
 			if not ('' in self.children[path].children or self.children[path].isLeaf):
+				##if noisy: print "XXX Returning 404 because target resource doesn't exist anyway"
 				return HelpfulNoResource()
 
 			# This is a non-standard relative redirect, which all browsers support.
 			# Note that request.uri are the raw octets that client sent in their GET/POST line.
+			##if noisy: print "XXX Redirecting to", request.uri + '/'
 			return RedirectingResource(301, request.uri + '/')
 
 		return self.children[path]

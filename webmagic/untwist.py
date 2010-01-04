@@ -125,7 +125,7 @@ class RedirectingResource(resource.Resource):
 		# twisted.web z9trunk protects against response-splitting, so we don't
 		# need to do anything to the Location header.
 		# Also, this is a relative redirect; non-standard, but all browsers accept it.
-		request.setHeader('Location', self._location)
+		request.responseHeaders._rawHeaders['location'] = [self._location]
 		return self.template % {'escaped': cgi.escape(self._location)}
 
 

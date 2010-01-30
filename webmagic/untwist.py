@@ -13,6 +13,8 @@ class CookieInstaller(object):
 	"""
 	Gets or sets a session cookie on a L{twisted.web.server.Request} object.
 	"""
+	__slots__ = ('_secureRandom',)
+
 	# Sent to HTTP and HTTPS.
 	insecureCookieName = '__'
 

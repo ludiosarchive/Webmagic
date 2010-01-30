@@ -72,7 +72,12 @@ class CookieInstallerTests(unittest.TestCase):
 
 
 	def test_installsCookieWithCustomDomain(self):
-		self.c.domain = ".customdomain.com"
+		del self.c
+		class MyCookieInstaller(CookieInstaller):
+			__slots__ = ()
+			domain = ".customdomain.com"
+		self.c = MyCookieInstaller(secureRandom=lambda nbytes: 'x'*nbytes) # not very random at all
+
 		sess = self.c.getSet(self.request)
 		self.aE('x' * 16, sess)
 		self.aE(

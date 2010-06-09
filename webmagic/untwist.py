@@ -6,7 +6,7 @@ a bit more sane.
 import cgi
 import binascii
 
-from twisted.web import resource
+from twisted.web import resource, static
 
 
 class CookieInstaller(object):
@@ -192,3 +192,31 @@ class BetterResource(resource.Resource):
 			return RedirectingResource(301, request.uri + '/')
 
 		return self.children[path]
+
+
+
+def loadCompatibleMimeTypes():
+	# Read from Python's built-in mimetypes, but don't load any mimetypes
+	# from disk.
+	contentTypes = static.loadMimeTypes(mimetype_locations=())
+	# Send the mimetypes that Google sends. These were captured on 2010-06-09.
+	contentTypes.update({
+		'.js': 'text/javascript',
+		'.ico': 'image/x-icon',
+	})
+	return contentTypes
+
+
+class BetterFile(static.File):
+	"""
+	A L{static.File} that does not read any mimetypes from disk, to make sure
+	no accidental dependencies on on-disk files are created.
+
+	Also use mimetypes for maximum compatibility, instead of the ones
+	that are most-correct.
+
+	Also only allows index.html as the index page.
+	"""
+	contentTypes = loadCompatibleMimeTypes()
+
+	indexNames = ["index.html"]

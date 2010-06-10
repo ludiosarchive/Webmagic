@@ -25,8 +25,8 @@ class CookieInstallerTests(unittest.TestCase):
 
 	def test_installsCookieOnCookielessRequest(self):
 		sess = self.c.getSet(self.request)
-		self.aE('x' * 16, sess)
-		self.aE(
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual(
 			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % base64.b64encode('x' * 16)],
 			self.request.cookies)
 
@@ -34,8 +34,8 @@ class CookieInstallerTests(unittest.TestCase):
 	def test_installsSecureCookieOnCookielessRequestHTTPS(self):
 		self.request.isSecure = lambda: True
 		sess = self.c.getSet(self.request)
-		self.aE('x' * 16, sess)
-		self.aE(
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual(
 			['_s=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/; Secure' % base64.b64encode('x' * 16)],
 			self.request.cookies)
 
@@ -46,8 +46,8 @@ class CookieInstallerTests(unittest.TestCase):
 		"""
 		self.request.received_cookies['__'] = base64.b64encode('x' * 16)
 		sess = self.c.getSet(self.request)
-		self.aE('x' * 16, sess)
-		self.aE([], self.request.cookies)
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual([], self.request.cookies)
 
 
 	def test_invalidCookiesIgnored(self):
@@ -65,8 +65,8 @@ class CookieInstallerTests(unittest.TestCase):
 			self._reset()
 			self.request.received_cookies['__'] = invalid
 			sess = self.c.getSet(self.request)
-			self.aE('x' * 16, sess)
-			self.aE(
+			self.assertEqual('x' * 16, sess)
+			self.assertEqual(
 				['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % base64.b64encode('x' * 16)],
 				self.request.cookies)
 
@@ -79,8 +79,8 @@ class CookieInstallerTests(unittest.TestCase):
 		self.c = MyCookieInstaller(secureRandom=lambda nbytes: 'x'*nbytes) # not very random at all
 
 		sess = self.c.getSet(self.request)
-		self.aE('x' * 16, sess)
-		self.aE(
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual(
 			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Domain=.customdomain.com; Path=/' % base64.b64encode('x' * 16)],
 			self.request.cookies)
 
@@ -178,7 +178,7 @@ class BetterResourceTests(unittest.TestCase):
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
-		self.aE("/hello/", res._location)
+		self.assertEqual("/hello/", res._location)
 
 
 	def test_redirectedToPathPlusSlash2(self): # For non-leaf
@@ -191,7 +191,7 @@ class BetterResourceTests(unittest.TestCase):
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
-		self.aE("/hello/", res._location)
+		self.assertEqual("/hello/", res._location)
 
 
 	def test_redirectedToPathPlusSlash3(self): # For non-leaf -> non-leaf
@@ -204,7 +204,7 @@ class BetterResourceTests(unittest.TestCase):
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
-		self.aE("/hello/", res._location)
+		self.assertEqual("/hello/", res._location)
 
 
 	def test_normalRequestToNonLeafNonLeafNotRedirected(self):
@@ -259,7 +259,7 @@ class BetterResourceTests(unittest.TestCase):
 		req2.uri = '/hello/child'
 		res2 = site.getResourceFor(req2)
 		self.assertTrue(isinstance(res2, RedirectingResource), res2)
-		self.aE("/hello/child/", res2._location)
+		self.assertEqual("/hello/child/", res2._location)
 
 
 	def test_404forBadPath(self):
@@ -311,7 +311,7 @@ class BetterResourceTests(unittest.TestCase):
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
-#		self.aE("/hello/", res._location)
+#		self.assertEqual("/hello/", res._location)
 #
 #
 #	def test_rootURLRedirectedOneExtraSlashWithLeafRoot(self):
@@ -322,7 +322,7 @@ class BetterResourceTests(unittest.TestCase):
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
-#		self.aE("/", res._location)
+#		self.assertEqual("/", res._location)
 #
 #
 #	def test_rootURLNotRedirectedOneExtraSlashWithNonLeafRoot(self):
@@ -333,6 +333,6 @@ class BetterResourceTests(unittest.TestCase):
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
-#		self.aE("/", res._location)
+#		self.assertEqual("/", res._location)
 
 

@@ -143,7 +143,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = Leaf()
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, Leaf), res)
+		self.assertTrue(isinstance(res, Leaf), res)
 
 
 	def test_rootURLNotRedirectedWithNonLeafRoot(self):
@@ -153,7 +153,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeafWithIndexChild()
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, Leaf), res)
+		self.assertTrue(isinstance(res, Leaf), res)
 
 
 	def test_normalRequestNotRedirected(self):
@@ -165,7 +165,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, Leaf), res)
+		self.assertTrue(isinstance(res, Leaf), res)
 
 
 	def test_redirectedToPathPlusSlash1(self): # For leaf
@@ -177,7 +177,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, RedirectingResource), res)
+		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
 
 
@@ -190,7 +190,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, RedirectingResource), res)
+		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
 
 
@@ -203,7 +203,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, RedirectingResource), res)
+		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.aE("/hello/", res._location)
 
 
@@ -216,7 +216,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, Leaf), res)
+		self.assertTrue(isinstance(res, Leaf), res)
 
 
 	def test_notRedirectedBecauseResourceIsNotBetter1(self): # For leaf
@@ -228,7 +228,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, LeafPlainResource), res)
+		self.assertTrue(isinstance(res, LeafPlainResource), res)
 
 
 	def test_notRedirectedBecauseResourceIsNotBetter2(self): # For non-leaf
@@ -240,7 +240,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, NonLeafPlainResource), res)
+		self.assertTrue(isinstance(res, NonLeafPlainResource), res)
 
 
 	def test_404forStrangeResourceBecauseNoIndex(self):
@@ -252,13 +252,13 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, HelpfulNoResource), res)
+		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
 		# Sanity check that child is accessible
 		req2 = DummyRequest(['hello', 'child'])
 		req2.uri = '/hello/child'
 		res2 = site.getResourceFor(req2)
-		self.assert_(isinstance(res2, RedirectingResource), res2)
+		self.assertTrue(isinstance(res2, RedirectingResource), res2)
 		self.aE("/hello/child/", res2._location)
 
 
@@ -271,7 +271,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('nothello', nothello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, HelpfulNoResource), res)
+		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
 
 	def test_404urlWithCrud(self):
@@ -283,7 +283,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, HelpfulNoResource), res)
+		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
 
 	def test_404urlWithSlashCrud(self):
@@ -295,7 +295,7 @@ class BetterResourceTests(unittest.TestCase):
 		r.putChild('hello', hello)
 		site = server.Site(r, clock=Clock())
 		res = site.getResourceFor(req)
-		self.assert_(isinstance(res, HelpfulNoResource), res)
+		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
 
 	# Right now, the behavior is to 404 if there are any extra slashes,
@@ -310,7 +310,7 @@ class BetterResourceTests(unittest.TestCase):
 #		r.putChild('hello', hello)
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
-#		self.assert_(isinstance(res, RedirectingResource), res)
+#		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.aE("/hello/", res._location)
 #
 #
@@ -321,7 +321,7 @@ class BetterResourceTests(unittest.TestCase):
 #		r = Leaf()
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
-#		self.assert_(isinstance(res, RedirectingResource), res)
+#		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.aE("/", res._location)
 #
 #
@@ -332,7 +332,7 @@ class BetterResourceTests(unittest.TestCase):
 #		r = NonLeafWithIndexChild()
 #		site = server.Site(r, clock=Clock())
 #		res = site.getResourceFor(req)
-#		self.assert_(isinstance(res, RedirectingResource), res)
+#		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.aE("/", res._location)
 
 

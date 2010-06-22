@@ -134,9 +134,9 @@ class RedirectingResource(resource.Resource):
 
 class BetterResource(resource.Resource):
 	"""
-	By default, twisted.web Resources:
-		- do NOT serve 404s if a URL is accessed as /page/extracrud
-		- do NOT redirect /page -> /page/, or /cat/page -> /cat/page/
+	By default, twisted.web Resources with `isLeaf = True`:
+		- do not serve 404s if a URL is accessed as /page/extracrud
+		- do not redirect /page -> /page/, or /cat/page -> /cat/page/
 
 	Also, when /page is fetched, twisted.web Resource calls a render_*
 	method, and when /page/ is fetched, it looks up /page/'s children.

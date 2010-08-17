@@ -204,6 +204,7 @@ def loadCompatibleMimeTypes():
 	contentTypes.update({
 		'.js': 'text/javascript',
 		'.ico': 'image/x-icon',
+		'.log': 'text/plain',
 	})
 	return contentTypes
 

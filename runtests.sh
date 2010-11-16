@@ -1,8 +1,5 @@
-#!/bin/zsh -e
+#!/bin/sh -e
 
-python -N `which trial` webmagic
-trial webmagic
-
-#echo
-#echo "Now running with the Python test runner..."
-#python -W all -m unittest discover
+python -W all `which trial` webmagic
+python -W all -N `which trial` webmagic
+python -W all -O `which trial` webmagic

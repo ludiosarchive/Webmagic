@@ -5,9 +5,12 @@ a bit more sane.
 
 import cgi
 import binascii
+from hashlib import md5
 
 from twisted.web import resource, static, http, server
 from twisted.python import log
+
+from zope.interface import implements, Interface
 
 
 class CookieInstaller(object):
@@ -209,6 +212,48 @@ def loadCompatibleMimeTypes():
 	return contentTypes
 
 
+class ICacheBreaker(Interface):
+
+	def getCacheBreaker():
+		"""
+		Returns a C{str} for use as the cachebreaker in a URL that points
+		to this resource.  Use an md5sum, a timestamp, or something
+		similar.
+		"""
+
+
+
+class CSSResource(BetterResource):
+	implements(ICacheBreaker)
+	isLeaf = True
+
+	def __init__(self, content):
+		BetterResource.__init__(self)
+		self.content = content
+
+
+	def render_GET(self, request):
+		request.responseHeaders.setRawHeaders('content-type',
+			['text/css; charset=UTF-8'])
+		# TODO: cache forever header
+		return '/* Processed by CSSResource */\n' + self.content
+
+
+	def getCacheBreaker(self):
+		# TODO: don't recompute md5 every time; use some cache
+		return md5(self.content).hexdigest()
+
+
+
+def makeCssRewriter(cssCache, fileCache):
+	def cssRewriter(path, registry):
+		content, maybeNew = fileCache.getContent(path)
+		return CSSResource(content)
+
+	return cssRewriter
+
+
+
 class BetterFile(static.File):
 	"""
 	A L{static.File} that does not read any mimetypes from disk, to make sure
@@ -222,6 +267,24 @@ class BetterFile(static.File):
 	contentTypes = loadCompatibleMimeTypes()
 
 	indexNames = ["index.html"]
+
+	def __init__(self, *args, **kwargs):
+		fileCache = kwargs.pop('fileCache', None)
+		rewriteCss = kwargs.pop('rewriteCss', None)
+		static.File.__init__(self, *args, **kwargs)
+		self._cssCache = None
+		if rewriteCss:
+			if not fileCache:
+				raise NotImplementedError(
+					"If rewriteCss is true, you must also give a fileCache.")
+			self._cssCache = {}
+			self.processors['.css'] = makeCssRewriter(self._cssCache, fileCache)
+
+
+	def createSimilarFile(self, path):
+		f = static.File.createSimilarFile(self, path)
+		f._cssCache = self._cssCache
+		return f
 
 
 

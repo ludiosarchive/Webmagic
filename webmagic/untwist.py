@@ -203,6 +203,17 @@ class BetterResource(resource.Resource):
 
 
 
+class ICacheBreaker(Interface):
+
+	def getCacheBreaker():
+		"""
+		Returns a C{str} for use as the cachebreaker in a URL that points
+		to this resource.  Use an md5sum, a timestamp, or something
+		similar.
+		"""
+
+
+
 def getResourceForPath(site, path):
 	"""
 	C{site} is a L{server.Site}.
@@ -263,16 +274,6 @@ def loadCompatibleMimeTypes():
 		'.log': 'text/plain',
 	})
 	return contentTypes
-
-
-class ICacheBreaker(Interface):
-
-	def getCacheBreaker():
-		"""
-		Returns a C{str} for use as the cachebreaker in a URL that points
-		to this resource.  Use an md5sum, a timestamp, or something
-		similar.
-		"""
 
 
 class _CSSCacheEntry(object):

@@ -241,33 +241,77 @@ class _CSSCacheEntry(object):
 		self.references = references
 
 
+	def __repr__(self):
+		return '<%s len(processed)=%r, digest=%r, references=%r>' % (
+			self.__class__.__name__,
+			len(self.processed), self.digest, self.references)
+
+
 
 class CSSResource(BetterResource):
 	implements(ICacheBreaker)
 	isLeaf = True
 
-	def __init__(self, content):
+	def __init__(self, fileCache, cssCache, path):
 		BetterResource.__init__(self)
-		self.content = content
+		self._fileCache = fileCache
+		self._cssCache = cssCache
+		self._path = path
+
+
+	def _digest(self, processed):
+		return md5(processed).hexdigest()
+
+
+	def _process(self, content):
+		"""
+		Return the processed CSS file as a C{str} and a C{list} of
+		absolute paths whose contents affect the processed CSS file.
+		"""
+		return '/* Processed by CSSResource */\n' + content, []
+
+
+	def _getProcessedCSS(self):
+		"""
+		Get processed CSS (new or from cache), and update the cache entry
+		if necessary.
+		"""
+		content, maybeNew = self._fileCache.getContent(self._path)
+		anyUpdatedReferences = False # TODO
+		if not maybeNew and not anyUpdatedReferences:
+			try:
+				entry = self._cssCache[self._path]
+				return entry.processed
+			except KeyError:
+				pass
+
+		processed, references = self._process(content)
+		entry = _CSSCacheEntry(processed, self._digest(processed), references)
+		self._cssCache[self._path] = entry
+
+		return processed
+
+
+	def getCacheBreaker(self):
+		try:
+			return self._cssCache[self._path].digest
+		except KeyError:
+			self._getProcessedCSS()
+			return self._cssCache[self._path].digest
 
 
 	def render_GET(self, request):
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
 		# TODO: cache forever header
-		return '/* Processed by CSSResource */\n' + self.content
 
-
-	def getCacheBreaker(self):
-		# TODO: don't recompute md5 every time; use some cache
-		return md5(self.content).hexdigest()
+		return self._getProcessedCSS()
 
 
 
 def makeCssRewriter(cssCache, fileCache):
 	def cssRewriter(path, registry):
-		content, maybeNew = fileCache.getContent(path)
-		return CSSResource(content)
+		return CSSResource(fileCache, cssCache, path)
 
 	return cssRewriter
 
@@ -296,6 +340,7 @@ class BetterFile(static.File):
 			if not fileCache:
 				raise NotImplementedError(
 					"If rewriteCss is true, you must also give a fileCache.")
+			# a dict of (absolute path) -> _CSSCacheEntry
 			self._cssCache = {}
 			self.processors['.css'] = makeCssRewriter(self._cssCache, fileCache)
 

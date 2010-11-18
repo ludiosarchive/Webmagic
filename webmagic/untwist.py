@@ -222,6 +222,25 @@ class ICacheBreaker(Interface):
 		"""
 
 
+class _CSSCacheEntry(object):
+	__slots__ = ('processed', 'digest', 'references')
+
+	def __init__(self, processed, digest, references):
+		"""
+		C{processed} is a C{str} containing the processed CSS file
+		with the rewritten url(...)s.
+
+		C{digest} is a C{str} containing a cachebreaker computed from the
+		contents of C{processed}.
+
+		C{references} is a C{list} of L{FilePath}s that may affect the
+		content of C{processed}.
+		"""
+		self.processed = processed
+		self.digest = digest
+		self.references = references
+
+
 
 class CSSResource(BetterResource):
 	implements(ICacheBreaker)

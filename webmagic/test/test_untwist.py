@@ -1,14 +1,20 @@
+from __future__ import with_statement
+
 import base64
 
 from twisted.trial import unittest
 
+from twisted.python.filepath import FilePath
 from twisted.internet.task import Clock
-from twisted.web.test.test_web import DummyChannel, DummyRequest
+from twisted.web.test import _util
 from twisted.web import http, server, resource
 
+from mypy.filecache import FileCache
 
+from webmagic.fakes import DummyChannel, DummyRequest
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,
+	BetterFile,
 )
 
 
@@ -336,3 +342,33 @@ class BetterResourceTests(unittest.TestCase):
 #		self.assertEqual("/", res._location)
 
 
+
+class BetterFileTests(unittest.TestCase):
+
+	def test_rewriteCss(self):
+		clock = Clock()
+		fc = FileCache(lambda: clock.rightNow, 1)
+		temp = FilePath(self.mktemp() + '.css')
+		with temp.open('wb') as f:
+			f.write("p { color: red; }\n")
+
+		# BetterFile(temp.path) would not work because the processing happens
+		# in getChild.  So, create a BetterFile for the .css file's parent dir.
+		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
+		basename = temp.basename()
+		request = DummyRequest([basename])
+		child = resource.getChildForRequest(bf, request)
+		d = _util._render(child, request)
+		def _assert(_):
+			self.assertEqual("""\
+/* Processed by CSSResource */
+p { color: red; }
+""", ''.join(request.written))
+		d.addCallback(_assert)
+		return d
+
+
+	def test_rewriteCssButNoFileCache(self):
+		self.assertRaises(
+			NotImplementedError,
+			lambda: BetterFile('nonexistent', rewriteCss=True))

@@ -7,6 +7,7 @@ from zope.interface import implements
 from twisted.internet import address, interfaces, task
 
 from twisted.web import server, resource
+from twisted.web import http
 from twisted.web.test.test_web import DummyRequest as _TwistedDummyRequest
 from twisted.test.proto_helpers import StringTransport
 #from twisted.internet.test.test_base import FakeReactor as _TwistedFakeReactor
@@ -163,6 +164,16 @@ class DummyRequest(_TwistedDummyRequest):
 		enough to reality.
 		"""
 		self.responseHeaders.setRawHeaders(name, [value])
+
+
+	def redirect(self, url):
+		"""
+		Utility function that does a redirect.
+
+		The request should have finish() called after this.
+		"""
+		self.setResponseCode(http.FOUND)
+		self.setHeader("location", url)
 
 
 	def isSecure(self):

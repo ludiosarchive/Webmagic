@@ -2,6 +2,7 @@ from zope.interface import Interface
 
 from mypy.transforms import md5hexdigest
 
+from urllib import unquote
 from webmagic.uriparse import urljoin
 
 from twisted.web.test.test_web import DummyRequest
@@ -22,13 +23,14 @@ class ICacheBreaker(Interface):
 def getResourceForPath(site, path):
 	"""
 	C{site} is a L{server.Site}.
-	C{path} is a C{str} path that starts with C{"/"}.
+	C{path} is a C{str} URL-encoded path that starts with C{"/"}.
 
 	Returns a resource from C{site}'s resource tree that corresponds
 	to C{path}.
 	"""
 	rootResource = site.resource
-	postpath = path.split('/')
+	# Unquote URL with the same function that twisted.web.server uses.
+	postpath = unquote(path).split('/')
 	postpath.pop(0)
 	dummyRequest = DummyRequest(postpath)
 	return getChildForRequest(rootResource, dummyRequest)

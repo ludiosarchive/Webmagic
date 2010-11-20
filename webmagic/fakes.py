@@ -12,6 +12,8 @@ from twisted.web.test.test_web import DummyRequest as _TwistedDummyRequest
 from twisted.test.proto_helpers import StringTransport
 #from twisted.internet.test.test_base import FakeReactor as _TwistedFakeReactor
 
+_postImportVars = vars().keys()
+
 
 # The use of "mock" and "dummy" in this file is totally inconsistent.
 
@@ -208,3 +210,8 @@ class MockProducer(GetNewMixin):
 	def stopProducing(self):
 		self.log.append(['stopProducing'])
 		self.stopped = True
+
+
+
+from pypycpyo import optimizer
+optimizer.bind_all_many(vars(), _postImportVars)

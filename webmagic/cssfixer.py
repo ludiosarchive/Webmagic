@@ -4,6 +4,8 @@ import cssutils
 from webmagic.uriparse import urljoin
 from webmagic.pathmanip import getResourceForHref, getBreakerForResource
 
+_postImportVars = vars().keys()
+
 
 # TODO: actually parse the CSS file
 def _getUrlsHack(s):
@@ -41,3 +43,7 @@ def fixUrls(fileCache, request, content):
 			content = content.replace("url(%s)" % href, "url(%s)" % cbLink, 1)
 
 	return content, fnames
+
+
+from pypycpyo import optimizer
+optimizer.bind_all_many(vars(), _postImportVars)

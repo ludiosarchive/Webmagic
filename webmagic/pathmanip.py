@@ -12,6 +12,8 @@ from webmagic.fakes import DummyRequest
 
 from twisted.web.resource import getChildForRequest
 
+_postImportVars = vars().keys()
+
 
 class ICacheBreaker(Interface):
 
@@ -118,3 +120,7 @@ def getCacheBrokenHref(fileCache, request, href):
 	dynamically-generated static files.
 	"""
 	return href + '?cb=' + getBreakerForHref(fileCache, request, href)
+
+
+from pypycpyo import optimizer
+optimizer.bind_all_many(vars(), _postImportVars)

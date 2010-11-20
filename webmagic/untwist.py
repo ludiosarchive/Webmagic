@@ -17,6 +17,8 @@ from mypy.transforms import md5hexdigest
 from webmagic.pathmanip import ICacheBreaker
 from webmagic.cssfixer import fixUrls
 
+_postImportVars = vars().keys()
+
 
 class CookieInstaller(object):
 	"""
@@ -429,3 +431,8 @@ class DisplayConnections(BetterResource):
 </pre>
 """ % (cgi.escape(conns),)
 		return out
+
+
+
+from pypycpyo import optimizer
+optimizer.bind_all_many(vars(), _postImportVars)

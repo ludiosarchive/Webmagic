@@ -224,14 +224,14 @@ class _CSSCacheEntry(object):
 
 	def __init__(self, processed, digest, references):
 		"""
-		C{processed} is a C{str} containing the processed CSS file
-		with the rewritten url(...)s.
+		@param processed: a C{str} containing the processed CSS file
+			with the rewritten url(...)s.
 
-		C{digest} is a C{str} containing a cachebreaker computed from the
-		contents of C{processed}.
+		@param digest: a C{str} containing a cachebreaker computed from
+			the contents of C{processed}.
 
-		C{references} is a C{list} of L{FilePath}s that may affect the
-		content of C{processed}.
+		@param references: a C{list} of L{ReferencedFile}s that may affect
+			the content of C{processed}.
 		"""
 		self.processed = processed
 		self.digest = digest
@@ -269,12 +269,37 @@ class CSSResource(BetterResource):
 	def _process(self, content):
 		"""
 		@return: the processed CSS file as a C{str} and a C{list} of
-			absolute paths whose contents affect the processed CSS file.
+			L{ReferencedFile}s whose contents affect the processed CSS
+			file.
 		"""
-		fixedContent, fnames = fixUrls(self._fileCache, self._request, content)
+		fixedContent, references = fixUrls(self._fileCache, self._request, content)
 		out = '/* CSSResource processed %s */\n%s' % (
 			md5hexdigest(content), fixedContent)
-		return out, fnames
+		return out, references
+
+
+	def _haveUpdatedReferences(self):
+		"""
+		@return: a C{bool}, whether any of the files referenced by the .css
+			file have been updated.
+
+		Note that this does not handle the obscure edge case of switching
+		out the /path/s on your L{server.Site}.  It may return a false
+		negative in this case.  It could be "improved" to work on this
+		case, but it would be slower.
+		"""
+		try:
+			entry = self._cssCache[self._path]
+		except KeyError:
+			return False
+
+		for ref in entry.references:
+			nowmd5, maybeNew = self._fileCache.getContent(
+				ref.path, transform=md5hexdigest)
+			if ref.lastmd5 != nowmd5:
+				return True
+
+		return False
 
 
 	def _getProcessedCSS(self):
@@ -284,8 +309,7 @@ class CSSResource(BetterResource):
 		This also updates the cache entry if necessary.
 		"""
 		content, maybeNew = self._fileCache.getContent(self._path)
-		anyUpdatedReferences = False # TODO
-		if not maybeNew and not anyUpdatedReferences:
+		if not maybeNew and not self._haveUpdatedReferences():
 			try:
 				entry = self._cssCache[self._path]
 				return entry.processed

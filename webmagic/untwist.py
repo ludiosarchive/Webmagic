@@ -271,10 +271,9 @@ class CSSResource(BetterResource):
 		@return: the processed CSS file as a C{str} and a C{list} of
 			absolute paths whose contents affect the processed CSS file.
 		"""
-		date = datetime.fromtimestamp(time.time()).isoformat()
 		fixedContent, fnames = fixUrls(self._fileCache, self._request, content)
-		out = '/* CSSResource processed %s on %s */\n%s' % (
-			md5hexdigest(content), date, fixedContent)
+		out = '/* CSSResource processed %s */\n%s' % (
+			md5hexdigest(content), fixedContent)
 		return out, fnames
 
 

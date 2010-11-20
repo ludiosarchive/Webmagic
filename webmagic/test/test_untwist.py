@@ -363,7 +363,7 @@ class BetterFileTests(unittest.TestCase):
 		def _assert(_):
 			out = "".join(request.written)
 			lines = out.split("\n")
-			self.assertTrue(re.match(r"/\* CSSResource processed (.{32}?) on (.*?) \*/", lines[0]), lines[0])
+			self.assertTrue(re.match(r"/\* CSSResource processed ([0-9a-f]{32}?) \*/", lines[0]), lines[0])
 			self.assertEqual("p { color: red; }", lines[1])
 			self.assertEqual("", lines[2])
 			self.assertEqual(3, len(lines))

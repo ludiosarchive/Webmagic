@@ -370,14 +370,14 @@ class BetterFileTests(unittest.TestCase):
 		d = self._requestPostpathAndRender(bf, [temp.basename()])
 
 		headerRe = re.compile(r"/\* CSSResource processed ([0-9a-f]{32}?) \*/")
-		def _assert(request):
+		def assertProcessedContent(request):
 			out = "".join(request.written)
 			lines = out.split("\n")
 			self.assertTrue(re.match(headerRe, lines[0]), lines[0])
 			self.assertEqual("p { color: red; }", lines[1])
 			self.assertEqual("", lines[2])
 			self.assertEqual(3, len(lines))
-		d.addCallback(_assert)
+		d.addCallback(assertProcessedContent)
 		return d
 
 
@@ -395,22 +395,33 @@ class BetterFileTests(unittest.TestCase):
 		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
 		d = self._requestPostpathAndRender(bf, [temp.basename()])
 
-		def _assertColorRed(request):
+		def assertColorRed(request):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: red; }", ""], lines[1:])
-		d.addCallback(_assertColorRed)
+		d.addCallback(assertColorRed)
 
-		def _modifyUnderlyingAndMakeRequest(_):
+		def modifyUnderlyingAndMakeRequest(_):
 			with temp.open('wb') as f:
 				f.write("p { color: green; }\n")
 			d = self._requestPostpathAndRender(bf, [temp.basename()])
 			return d
-		d.addCallback(_modifyUnderlyingAndMakeRequest)
+		d.addCallback(modifyUnderlyingAndMakeRequest)
 
-		def _assertStillColorRed(request):
+		def assertStillColorRed(request):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: red; }", ""], lines[1:])
-		d.addCallback(_assertStillColorRed)
+		d.addCallback(assertStillColorRed)
+
+		def jumpClockAndMakeRequest(_):
+			clock.advance(1)
+			d = self._requestPostpathAndRender(bf, [temp.basename()])
+			return d
+		d.addCallback(jumpClockAndMakeRequest)
+
+		def assertColorGreen(request):
+			lines = "".join(request.written).split("\n")
+			self.assertEqual(["p { color: green; }", ""], lines[1:])
+		d.addCallback(assertColorGreen)
 
 		return d
 

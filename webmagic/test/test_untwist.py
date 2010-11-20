@@ -346,7 +346,18 @@ class BetterResourceTests(unittest.TestCase):
 
 class BetterFileTests(unittest.TestCase):
 
+	def _requestPostpathAndRender(self, baseResource, postpath):
+		request = DummyRequest(postpath)
+		child = resource.getChildForRequest(baseResource, request)
+		d = _util._render(child, request)
+		d.addCallback(lambda _: request)
+		return d
+
+
 	def test_rewriteCss(self):
+		"""
+		Test that CSS processing works, and verify the header.
+		"""
 		clock = Clock()
 		fc = FileCache(lambda: clock.rightNow, 1)
 		temp = FilePath(self.mktemp() + '.css')
@@ -356,18 +367,51 @@ class BetterFileTests(unittest.TestCase):
 		# BetterFile(temp.path) would not work because the processing happens
 		# in getChild.  So, create a BetterFile for the .css file's parent dir.
 		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
-		basename = temp.basename()
-		request = DummyRequest([basename])
-		child = resource.getChildForRequest(bf, request)
-		d = _util._render(child, request)
-		def _assert(_):
+		d = self._requestPostpathAndRender(bf, [temp.basename()])
+
+		headerRe = re.compile(r"/\* CSSResource processed ([0-9a-f]{32}?) \*/")
+		def _assert(request):
 			out = "".join(request.written)
 			lines = out.split("\n")
-			self.assertTrue(re.match(r"/\* CSSResource processed ([0-9a-f]{32}?) \*/", lines[0]), lines[0])
+			self.assertTrue(re.match(headerRe, lines[0]), lines[0])
 			self.assertEqual("p { color: red; }", lines[1])
 			self.assertEqual("", lines[2])
 			self.assertEqual(3, len(lines))
 		d.addCallback(_assert)
+		return d
+
+
+	def test_cssCached(self):
+		"""
+		The processed CSS file is cached, and updated when the underlying
+		file changes.
+		"""
+		clock = Clock()
+		fc = FileCache(lambda: clock.rightNow, 1)
+		temp = FilePath(self.mktemp() + '.css')
+		with temp.open('wb') as f:
+			f.write("p { color: red; }\n")
+
+		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
+		d = self._requestPostpathAndRender(bf, [temp.basename()])
+
+		def _assertColorRed(request):
+			lines = "".join(request.written).split("\n")
+			self.assertEqual(["p { color: red; }", ""], lines[1:])
+		d.addCallback(_assertColorRed)
+
+		def _modifyUnderlyingAndMakeRequest(_):
+			with temp.open('wb') as f:
+				f.write("p { color: green; }\n")
+			d = self._requestPostpathAndRender(bf, [temp.basename()])
+			return d
+		d.addCallback(_modifyUnderlyingAndMakeRequest)
+
+		def _assertStillColorRed(request):
+			lines = "".join(request.written).split("\n")
+			self.assertEqual(["p { color: red; }", ""], lines[1:])
+		d.addCallback(_assertStillColorRed)
+
 		return d
 
 

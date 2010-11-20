@@ -2,6 +2,7 @@ from __future__ import with_statement
 
 import re
 import base64
+import hashlib
 
 from twisted.trial import unittest
 
@@ -346,8 +347,12 @@ class BetterResourceTests(unittest.TestCase):
 
 class BetterFileTests(unittest.TestCase):
 
-	def _requestPostpathAndRender(self, baseResource, postpath):
+	def _requestPostpathAndRender(self, baseResource, postpath, path=None, site=None):
 		request = DummyRequest(postpath)
+		if path:
+			request.path = path
+		if site:
+			request.channel.site = site
 		child = resource.getChildForRequest(baseResource, request)
 		d = _util._render(child, request)
 		d.addCallback(lambda _: request)
@@ -389,8 +394,7 @@ class BetterFileTests(unittest.TestCase):
 		clock = Clock()
 		fc = FileCache(lambda: clock.rightNow, 1)
 		temp = FilePath(self.mktemp() + '.css')
-		with temp.open('wb') as f:
-			f.write("p { color: red; }\n")
+		temp.setContent("p { color: red; }\n")
 
 		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
 		d = self._requestPostpathAndRender(bf, [temp.basename()])
@@ -422,6 +426,58 @@ class BetterFileTests(unittest.TestCase):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: green; }", ""], lines[1:])
 		d.addCallback(assertColorGreen)
+
+		return d
+
+
+	def test_cssRewriterFixesUrls(self):
+		"""
+		The CSS rewriter appends ?cachebreakers to the url(...)s inside
+		the .css file.
+		"""
+		parent = FilePath(self.mktemp())
+		parent.makedirs()
+		sub = parent.child('sub')
+		sub.makedirs()
+		subsub = sub.child('subsub')
+		subsub.makedirs()
+
+		clock = Clock()
+		fc = FileCache(lambda: clock.rightNow, 1)
+
+		parent.child('one.png').setContent("one")
+		sub.child("two.png").setContent("two")
+		subsub.child("three.png").setContent("three")
+
+		t = {}
+		t['md5one'] = hashlib.md5("one").hexdigest()
+		t['md5two'] = hashlib.md5("two").hexdigest()
+		t['md5three'] = hashlib.md5("three").hexdigest()
+
+		temp = sub.child('style.css')
+		original = """\
+p { background-image: url(../one.png); }
+q { background-image: url(two.png); }
+b { background-image: url(subsub/three.png); }
+i { background-image: url(/sub/subsub/three.png); }
+"""
+		temp.setContent(original)
+		t['md5original'] = hashlib.md5(original).hexdigest()
+
+		root = BetterFile(parent.path, fileCache=fc, rewriteCss=True)
+		site = server.Site(root)
+		d = self._requestPostpathAndRender(root, ['sub', 'style.css'], path='/sub/style.css', site=site)
+
+		def assertCacheBrokenLinks(request):
+			out = "".join(request.written)
+			self.assertEqual("""\
+/* CSSResource processed %(md5original)s */
+p { background-image: url(../one.png?cb=%(md5one)s); }
+q { background-image: url(two.png?cb=%(md5two)s); }
+b { background-image: url(subsub/three.png?cb=%(md5three)s); }
+i { background-image: url(/sub/subsub/three.png?cb=%(md5three)s); }
+""" % t, out)
+		d.addCallback(assertCacheBrokenLinks)
 
 		return d
 

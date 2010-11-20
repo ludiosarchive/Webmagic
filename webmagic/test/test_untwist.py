@@ -416,11 +416,11 @@ class BetterFileTests(unittest.TestCase):
 			self.assertEqual(["p { color: red; }", ""], lines[1:])
 		d.addCallback(assertStillColorRed)
 
-		def jumpClockAndMakeRequest(_):
+		def advanceClockAndMakeRequest(_):
 			clock.advance(1)
 			d = self._requestPostpathAndRender(bf, [temp.basename()])
 			return d
-		d.addCallback(jumpClockAndMakeRequest)
+		d.addCallback(advanceClockAndMakeRequest)
 
 		def assertColorGreen(request):
 			lines = "".join(request.written).split("\n")
@@ -446,6 +446,7 @@ class BetterFileTests(unittest.TestCase):
 		t['md5one'] = hashlib.md5("one").hexdigest()
 		t['md5two'] = hashlib.md5("two").hexdigest()
 		t['md5three'] = hashlib.md5("three").hexdigest()
+		t['md5replacement'] = hashlib.md5("replacement").hexdigest()
 
 		temp = sub.child('style.css')
 		original = """\
@@ -463,25 +464,57 @@ i { background-image: url(/sub/sub%20sub/three.png); }
 	def test_cssRewriterFixesUrls(self):
 		"""
 		The CSS rewriter appends ?cachebreakers to the url(...)s inside
-		the .css file.
+		the .css file.  If a file mentioned by a url(...) is modified, the
+		processed .css is updated.
 		"""
 		clock = Clock()
 		fc = FileCache(lambda: clock.rightNow, 1)
 		parent, t = self._makeTree()
 		root = BetterFile(parent.path, fileCache=fc, rewriteCss=True)
 		site = server.Site(root)
-		d = self._requestPostpathAndRender(root, ['sub', 'style.css'], path='/sub/style.css', site=site)
 
-		def assertCacheBrokenLinks(request):
-			out = "".join(request.written)
-			self.assertEqual("""\
+		def requestStyleCss():
+			return self._requestPostpathAndRender(
+				root, ['sub', 'style.css'], path='/sub/style.css', site=site)
+
+		d = requestStyleCss()
+
+		expect = """\
 /* CSSResource processed %(md5original)s */
 p { background-image: url(../one.png?cb=%(md5one)s); }
 q { background-image: url(two.png?cb=%(md5two)s); }
 b { background-image: url(sub%%20sub/three.png?cb=%(md5three)s); }
 i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
-""" % t, out)
+"""
+
+		def assertCacheBrokenLinks(request):
+			out = "".join(request.written)
+			self.assertEqual(expect % t, out,
+				"\nExpected:\n\n%s\n\nGot:\n\n%s" % (expect %t, out))
 		d.addCallback(assertCacheBrokenLinks)
+
+		def modifyThreePngAndMakeRequest(_):
+			parent.child('sub').child('sub sub').child('three.png').setContent("replacement")
+			return requestStyleCss()
+		d.addCallback(modifyThreePngAndMakeRequest)
+
+		def assertNotUpdatedLinks(request):
+			out = "".join(request.written)
+			# Still the same links, because we didn't advance the clock.
+			self.assertEqual(expect % t, out)
+		d.addCallback(assertNotUpdatedLinks)
+
+		def advanceClockAndMakeRequest(_):
+			clock.advance(1)
+			return requestStyleCss()
+		d.addCallback(advanceClockAndMakeRequest)
+
+		def assertUpdatedLinks(request):
+			out = "".join(request.written)
+			t2 = t.copy()
+			t2['md5three'] = t['md5replacement']
+			self.assertEqual(expect % t2, out)
+		d.addCallback(assertUpdatedLinks)
 
 		return d
 

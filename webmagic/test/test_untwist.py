@@ -356,15 +356,20 @@ class CSSCacheEntryTests(unittest.TestCase):
 
 class BetterFileTests(unittest.TestCase):
 
-	def _requestPostpathAndRender(self, baseResource, postpath, path=None, site=None):
+	def _makeDummyRequest(self, postpath, path, site):
 		request = DummyRequest(postpath)
 		if path:
 			request.path = path
 		if site:
 			request.channel.site = site
+		return request
+
+
+	def _requestPostpathAndRender(self, baseResource, postpath, path=None, site=None):
+		request = self._makeDummyRequest(postpath, path, site)
 		child = resource.getChildForRequest(baseResource, request)
 		d = _util._render(child, request)
-		d.addCallback(lambda _: request)
+		d.addCallback(lambda _: (request, child))
 		return d
 
 
@@ -384,7 +389,7 @@ class BetterFileTests(unittest.TestCase):
 		d = self._requestPostpathAndRender(bf, [temp.basename()])
 
 		headerRe = re.compile(r"/\* CSSResource processed ([0-9a-f]{32}?) \*/")
-		def assertProcessedContent(request):
+		def assertProcessedContent((request, child)):
 			out = "".join(request.written)
 			lines = out.split("\n")
 			self.assertTrue(re.match(headerRe, lines[0]), lines[0])
@@ -408,7 +413,7 @@ class BetterFileTests(unittest.TestCase):
 		bf = BetterFile(temp.parent().path, fileCache=fc, rewriteCss=True)
 		d = self._requestPostpathAndRender(bf, [temp.basename()])
 
-		def assertColorRed(request):
+		def assertColorRed((request, child)):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: red; }", ""], lines[1:])
 		d.addCallback(assertColorRed)
@@ -420,7 +425,7 @@ class BetterFileTests(unittest.TestCase):
 			return d
 		d.addCallback(modifyUnderlyingAndMakeRequest)
 
-		def assertStillColorRed(request):
+		def assertStillColorRed((request, child)):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: red; }", ""], lines[1:])
 		d.addCallback(assertStillColorRed)
@@ -431,7 +436,7 @@ class BetterFileTests(unittest.TestCase):
 			return d
 		d.addCallback(advanceClockAndMakeRequest)
 
-		def assertColorGreen(request):
+		def assertColorGreen((request, child)):
 			lines = "".join(request.written).split("\n")
 			self.assertEqual(["p { color: green; }", ""], lines[1:])
 		d.addCallback(assertColorGreen)
@@ -500,10 +505,12 @@ b { background-image: url(sub%%20sub/three.png?cb=%(md5three)s); }
 i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 """
 
-		def assertCacheBrokenLinks(request):
+		def assertCacheBrokenLinks((request, child)):
 			out = "".join(request.written)
 			self.assertEqual(expect % t, out,
-				"\nExpected:\n\n%s\n\nGot:\n\n%s" % (expect %t, out))
+				"\nExpected:\n\n%s\n\nGot:\n\n%s" % (expect % t, out))
+			expectedBreaker = hashlib.md5(expect % t).hexdigest()
+			self.assertEqual(expectedBreaker, child.getCacheBreaker())
 		d.addCallback(assertCacheBrokenLinks)
 
 		def modifyThreePngAndMakeRequest(_):
@@ -511,7 +518,7 @@ i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 			return requestStyleCss()
 		d.addCallback(modifyThreePngAndMakeRequest)
 
-		def assertNotUpdatedLinks(request):
+		def assertNotUpdatedLinks((request, child)):
 			out = "".join(request.written)
 			# Still the same links, because we didn't advance the clock.
 			self.assertEqual(expect % t, out)
@@ -522,7 +529,7 @@ i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 			return requestStyleCss()
 		d.addCallback(advanceClockAndMakeRequest)
 
-		def assertUpdatedLinks(request):
+		def assertUpdatedLinks((request, child)):
 			out = "".join(request.written)
 			t2 = t.copy()
 			t2['md5three'] = t['md5replacement']

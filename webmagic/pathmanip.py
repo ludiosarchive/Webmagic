@@ -60,6 +60,10 @@ def getBreakerForResource(fileCache, resource):
 
 	Returns a C{str} representing the md5sum hexdigest of the contents of
 	C{resource}.
+
+	Warning: the contents of C{resource}'s file will be cached, and items
+	may stay in this cache forever.  Don't use this on dynamically-
+	generated static files.
 	"""
 	# First try the getCacheBreaker method on the Resource, otherwise
 	# assume it is a static.File and calculate the breaker ourselves.
@@ -77,28 +81,29 @@ def getBreakerForResource(fileCache, resource):
 	return breaker
 
 
-def makeCacheBreakLink(fileCache, request):
+def getBreakerForHref(fileCache, request, href):
+	"""
+	See L{getCacheBrokenHref} for argument description and warning.
+
+	Returns a C{str}, (md5sum of contents of href).
+	"""
+	joinedPath = urljoin(request.path, href)
+	site = request.channel.site
+	staticResource = getResourceForPath(site, joinedPath)
+	return getBreakerForResource(fileCache, staticResource)
+
+
+def getCacheBrokenHref(fileCache, request, href):
 	"""
 	C{fileCache} is a L{filecache.FileCache}.
+	C{request} is the L{server.Request} for the page that contains C{href}.
+	C{href} is a C{str}, a target pointing to a L{static.File} mounted
+	somewhere on C{request}'s site.
 
-	C{request} is the L{server.Request} for the page that contains the href
-	passed to L{cacheBreakLink}.
+	Returns a C{str}, C{href + '?cb=' + (md5sum of contents of href)}.
+
+	Warning: the contents of the file at C{href} will be cached, and
+	items may stay in this cache forever.  Don't use this on
+	dynamically-generated static files.
 	"""
-	def cacheBreakLink(href):
-		"""
-		A function that takes an C{href} and returns
-		C{href + '?cb=' + (md5sum of contents of href)}.
-
-		This requires that C{href} is somewhere on the L{site.Site}'s
-		resource tree and that it is a L{static.File}.
-
-		Warning: the contents of the file at C{href} will be cached, and
-		items from this cache are never removed.  Don't use this on
-		dynamically-generated static files.
-		"""
-		joinedPath = urljoin(request.path, href)
-		site = request.channel.site
-		staticResource = getResourceForPath(site, joinedPath)
-		return href + '?cb=' + getBreakerForResource(fileCache, staticResource)
-
-	return cacheBreakLink
+	return href + '?cb=' + getBreakerForHref(fileCache, request, href)

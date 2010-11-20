@@ -16,7 +16,7 @@ from mypy.filecache import FileCache
 from webmagic.fakes import DummyChannel, DummyRequest
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,
-	BetterFile,
+	_CSSCacheEntry, BetterFile,
 )
 
 
@@ -345,6 +345,15 @@ class BetterResourceTests(unittest.TestCase):
 
 
 
+class CSSCacheEntryTests(unittest.TestCase):
+
+	def test_repr(self):
+		cce = _CSSCacheEntry('processed', 'digest', [])
+		self.assertEqual("<_CSSCacheEntry len(processed)=9, "
+			"digest='digest', references=[]>", repr(cce))
+
+
+
 class BetterFileTests(unittest.TestCase):
 
 	def _requestPostpathAndRender(self, baseResource, postpath, path=None, site=None):
@@ -450,6 +459,8 @@ class BetterFileTests(unittest.TestCase):
 
 		temp = sub.child('style.css')
 		original = """\
+div { background-image: url(http://127.0.0.1/not-modified.png); }
+td { background-image: url(https://127.0.0.1/not-modified.png); }
 p { background-image: url(../one.png); }
 q { background-image: url(two.png); }
 b { background-image: url(sub%20sub/three.png); }
@@ -481,6 +492,8 @@ i { background-image: url(/sub/sub%20sub/three.png); }
 
 		expect = """\
 /* CSSResource processed %(md5original)s */
+div { background-image: url(http://127.0.0.1/not-modified.png); }
+td { background-image: url(https://127.0.0.1/not-modified.png); }
 p { background-image: url(../one.png?cb=%(md5one)s); }
 q { background-image: url(two.png?cb=%(md5two)s); }
 b { background-image: url(sub%%20sub/three.png?cb=%(md5three)s); }

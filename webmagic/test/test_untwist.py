@@ -435,7 +435,7 @@ class BetterFileTests(unittest.TestCase):
 		parent.makedirs()
 		sub = parent.child('sub')
 		sub.makedirs()
-		subsub = sub.child('subsub')
+		subsub = sub.child('sub sub')
 		subsub.makedirs()
 
 		parent.child('one.png').setContent("one")
@@ -451,8 +451,8 @@ class BetterFileTests(unittest.TestCase):
 		original = """\
 p { background-image: url(../one.png); }
 q { background-image: url(two.png); }
-b { background-image: url(subsub/three.png); }
-i { background-image: url(/sub/subsub/three.png); }
+b { background-image: url(sub%20sub/three.png); }
+i { background-image: url(/sub/sub%20sub/three.png); }
 """
 		temp.setContent(original)
 		t['md5original'] = hashlib.md5(original).hexdigest()
@@ -478,8 +478,8 @@ i { background-image: url(/sub/subsub/three.png); }
 /* CSSResource processed %(md5original)s */
 p { background-image: url(../one.png?cb=%(md5one)s); }
 q { background-image: url(two.png?cb=%(md5two)s); }
-b { background-image: url(subsub/three.png?cb=%(md5three)s); }
-i { background-image: url(/sub/subsub/three.png?cb=%(md5three)s); }
+b { background-image: url(sub%%20sub/three.png?cb=%(md5three)s); }
+i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 """ % t, out)
 		d.addCallback(assertCacheBrokenLinks)
 

@@ -430,20 +430,13 @@ class BetterFileTests(unittest.TestCase):
 		return d
 
 
-	def test_cssRewriterFixesUrls(self):
-		"""
-		The CSS rewriter appends ?cachebreakers to the url(...)s inside
-		the .css file.
-		"""
+	def _makeTree(self):
 		parent = FilePath(self.mktemp())
 		parent.makedirs()
 		sub = parent.child('sub')
 		sub.makedirs()
 		subsub = sub.child('subsub')
 		subsub.makedirs()
-
-		clock = Clock()
-		fc = FileCache(lambda: clock.rightNow, 1)
 
 		parent.child('one.png').setContent("one")
 		sub.child("two.png").setContent("two")
@@ -464,6 +457,17 @@ i { background-image: url(/sub/subsub/three.png); }
 		temp.setContent(original)
 		t['md5original'] = hashlib.md5(original).hexdigest()
 
+		return parent, t
+
+
+	def test_cssRewriterFixesUrls(self):
+		"""
+		The CSS rewriter appends ?cachebreakers to the url(...)s inside
+		the .css file.
+		"""
+		clock = Clock()
+		fc = FileCache(lambda: clock.rightNow, 1)
+		parent, t = self._makeTree()
 		root = BetterFile(parent.path, fileCache=fc, rewriteCss=True)
 		site = server.Site(root)
 		d = self._requestPostpathAndRender(root, ['sub', 'style.css'], path='/sub/style.css', site=site)

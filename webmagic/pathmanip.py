@@ -17,18 +17,18 @@ class ICacheBreaker(Interface):
 
 	def getCacheBreaker():
 		"""
-		Returns a C{str} for use as the cachebreaker in a URL that points
-		to this resource.  Use an md5sum, a timestamp, or something
-		similar.
+		@return: a C{str} for use as the cachebreaker in a URL that points
+			to this resource.  Use an md5sum, a timestamp, or something
+			similar.
 		"""
 
 
 def makeRequestForPath(site, path):
 	"""
-	C{site} is a L{server.Site}.
-	C{path} is a C{str} URL-encoded path that starts with C{"/"}.
+	@param site: a L{server.Site}.
+	@param path: a C{str} URL-encoded path that starts with C{"/"}.
 
-	Returns a request that requests C{path}.
+	@return: a request that requests C{path}.
 	"""
 	# Unquote URL with the same function that twisted.web.server uses.
 	postpath = unquote(path).split('/')
@@ -41,11 +41,11 @@ def makeRequestForPath(site, path):
 
 def getResourceForPath(site, path):
 	"""
-	C{site} is a L{server.Site}.
-	C{path} is a C{str} URL-encoded path that starts with C{"/"}.
+	@param site: a L{server.Site}.
+	@param path: a C{str} URL-encoded path that starts with C{"/"}.
 
-	Returns a resource from C{site}'s resource tree that corresponds
-	to C{path}.
+	@return: a resource from C{site}'s resource tree that corresponds
+		to C{path}.
 	"""
 	rootResource = site.resource
 	dummyRequest = makeRequestForPath(site, path)
@@ -54,12 +54,12 @@ def getResourceForPath(site, path):
 
 def getBreakerForResource(fileCache, resource):
 	"""
-	C{fileCache} is a L{mypy.filecache.FileCache}.
-	C{resource} is a L{static.File} or a subclass, which may or may not
-	provide L{ICacheBreaker}.
+	@param fileCache: a L{filecache.FileCache}.
+	@param resource: a L{static.File} or a subclass, which may or may not
+		provide L{ICacheBreaker}.
 
-	Returns a C{str} representing the md5sum hexdigest of the contents of
-	C{resource}.
+	@return: a C{str} representing the md5sum hexdigest of the contents of
+		C{resource}.
 
 	Warning: the contents of C{resource}'s file will be cached, and items
 	may stay in this cache forever.  Don't use this on dynamically-
@@ -85,7 +85,7 @@ def getBreakerForHref(fileCache, request, href):
 	"""
 	See L{getCacheBrokenHref} for argument description and warning.
 
-	Returns a C{str}, (md5sum of contents of href).
+	@return: a C{str}, (md5sum of contents of href).
 	"""
 	joinedPath = urljoin(request.path, href)
 	site = request.channel.site
@@ -95,12 +95,12 @@ def getBreakerForHref(fileCache, request, href):
 
 def getCacheBrokenHref(fileCache, request, href):
 	"""
-	C{fileCache} is a L{filecache.FileCache}.
-	C{request} is the L{server.Request} for the page that contains C{href}.
-	C{href} is a C{str}, a target pointing to a L{static.File} mounted
-	somewhere on C{request}'s site.
+	@param fileCache: a L{filecache.FileCache}.
+	@param request: the L{server.Request} for the page that contains C{href}.
+	@param href: a C{str}, a target pointing to a L{static.File} mounted
+		somewhere on C{request}'s site.
 
-	Returns a C{str}, C{href + '?cb=' + (md5sum of contents of href)}.
+	@return: a C{str}, C{href + '?cb=' + (md5sum of contents of href)}.
 
 	Warning: the contents of the file at C{href} will be cached, and
 	items may stay in this cache forever.  Don't use this on

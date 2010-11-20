@@ -249,15 +249,13 @@ class CSSResource(BetterResource):
 
 	def __init__(self, fileCache, cssCache, request, path):
 		"""
-		C{fileCache} is a L{filecache.FileCache}.
-
-		C{cssCache} is a C{dict} mapping filenames to L{_CSSCacheEntry}
-		objects.
-
-		C{request} is the L{server.Request} that is requesting this resource.
-		Note: a new CSSResource is generated for each request.
-
-		C{path} is a C{str} representing the absolute path of the .css file.
+		@param fileCache: a L{filecache.FileCache}.
+		@param cssCache: a C{dict} mapping filenames to L{_CSSCacheEntry}
+			objects.
+		@param request: the L{server.Request} that is requesting this
+			resource.  Note: L{BetterFile} instantiates a new CSSResource
+			for each request.
+		@param path: a C{str}, the absolute path of the .css file.
 		"""
 		BetterResource.__init__(self)
 		self._fileCache = fileCache
@@ -268,8 +266,8 @@ class CSSResource(BetterResource):
 
 	def _process(self, content):
 		"""
-		Return the processed CSS file as a C{str} and a C{list} of
-		absolute paths whose contents affect the processed CSS file.
+		@return: the processed CSS file as a C{str} and a C{list} of
+			absolute paths whose contents affect the processed CSS file.
 		"""
 		date = datetime.fromtimestamp(time.time()).isoformat()
 		fixedContent, fnames = fixUrls(self._fileCache, self._request, content)
@@ -280,8 +278,9 @@ class CSSResource(BetterResource):
 
 	def _getProcessedCSS(self):
 		"""
-		Get processed CSS (new or from cache), and update the cache entry
-		if necessary.
+		@return: a C{str}, the processed CSS (new or from cache).
+
+		This also updates the cache entry if necessary.
 		"""
 		content, maybeNew = self._fileCache.getContent(self._path)
 		anyUpdatedReferences = False # TODO

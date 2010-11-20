@@ -17,17 +17,16 @@ def _getUrlsHack(s):
 
 class ReferencedFile(tuple):
 	"""
-	Represents a file referenced by a .css file and its last-known md5sum
-	(as a hexdigest).
+	Represents a file referenced by a .css file and its last-known hash.
 	"""
 	__slots__ = ()
 	_MARKER = object()
 
 	path = property(operator.itemgetter(1))
-	lastmd5 = property(operator.itemgetter(2))
+	lasthash = property(operator.itemgetter(2))
 
-	def __new__(cls, path, lastmd5):
-		return tuple.__new__(cls, (cls._MARKER, path, lastmd5))
+	def __new__(cls, path, lasthash):
+		return tuple.__new__(cls, (cls._MARKER, path, lasthash))
 
 
 	def __repr__(self):

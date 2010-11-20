@@ -294,9 +294,9 @@ class CSSResource(BetterResource):
 			return False
 
 		for ref in entry.references:
-			nowmd5, maybeNew = self._fileCache.getContent(
+			nowhash, maybeNew = self._fileCache.getContent(
 				ref.path, transform=md5hexdigest)
-			if ref.lastmd5 != nowmd5:
+			if ref.lasthash != nowhash:
 				return True
 
 		return False

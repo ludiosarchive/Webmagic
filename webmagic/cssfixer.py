@@ -1,9 +1,15 @@
+import re
 import cssutils
 
-from mypy.transforms import md5hexdigest
-
 from webmagic.uriparse import urljoin
-from webmagic.pathmanip import getResourceForPath
+from webmagic.pathmanip import getResourceForPath, getBreakerForResource
+
+
+# TODO: actually parse the CSS file
+def _getUrlsHack(s):
+	matches = re.findall(r'url\(.*?\)', s)
+	for m in matches:
+		yield m[4:-1]
 
 
 def fixUrls(fileCache, request, content):
@@ -22,8 +28,12 @@ def fixUrls(fileCache, request, content):
 	C{request} is the L{server.Request} for the .css file.
 
 	C{content} is a C{str} representing the content of the original .css file.
+
+	Returns a C{str} representing the processed CSS file, and a C{list} of
+	filenames whose contents affect the processed CSS file.
 	"""
-	urls = [] # TODO
+	fnames = []
+	urls = _getUrlsHack(content)
 	for href in urls:
 		if href.startswith('http://') or href.startswith('https://'):
 			pass
@@ -32,4 +42,9 @@ def fixUrls(fileCache, request, content):
 			joinedPath = urljoin(request.path, href)
 			site = request.channel.site
 			staticResource = getResourceForPath(site, joinedPath)
-		# TODO
+			cbLink = href + '?cb=' + getBreakerForResource(fileCache, staticResource)
+			fnames.append(staticResource.path)
+			# TODO: don't do this
+			content = content.replace("url(%s)" % href, "url(%s)" % cbLink, 1)
+
+	return content, fnames

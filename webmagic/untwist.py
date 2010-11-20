@@ -7,12 +7,13 @@ import cgi
 import binascii
 
 from twisted.web import resource, static, http, server
-from twisted.python import log
+from twisted.python import context, log
 
-from zope.interface import implements, Interface
+from zope.interface import implements
 
 from mypy.transforms import md5hexdigest
 from webmagic.pathmanip import ICacheBreaker
+from webmagic.cssfixer import fixUrls
 
 
 class CookieInstaller(object):
@@ -244,18 +245,22 @@ class CSSResource(BetterResource):
 	implements(ICacheBreaker)
 	isLeaf = True
 
-	def __init__(self, fileCache, cssCache, path):
+	def __init__(self, fileCache, cssCache, request, path):
 		"""
 		C{fileCache} is a L{filecache.FileCache}.
 
 		C{cssCache} is a C{dict} mapping filenames to L{_CSSCacheEntry}
 		objects.
 
+		C{request} is the L{server.Request} that is requesting this resource.
+		Note: a new CSSResource is generated for each request.
+
 		C{path} is a C{str} representing the absolute path of the .css file.
 		"""
 		BetterResource.__init__(self)
 		self._fileCache = fileCache
 		self._cssCache = cssCache
+		self._request = request
 		self._path = path
 
 
@@ -264,7 +269,8 @@ class CSSResource(BetterResource):
 		Return the processed CSS file as a C{str} and a C{list} of
 		absolute paths whose contents affect the processed CSS file.
 		"""
-		return '/* Processed by CSSResource */\n' + content, []
+		fixedContent, fnames = fixUrls(self._fileCache, self._request, content)
+		return '/* Processed by CSSResource */\n' + fixedContent, fnames
 
 
 	def _getProcessedCSS(self):
@@ -297,6 +303,10 @@ class CSSResource(BetterResource):
 
 
 	def render_GET(self, request):
+		assert self._request is request, (
+			"unexpected render_GET request: ",
+			request, " is not ", self._request)
+
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
 		# TODO: cache forever header
@@ -310,7 +320,8 @@ def makeCssRewriter(cssCache, fileCache):
 		"""
 		C{path} is a C{str} representing the absolute path of the .css file.
 		"""
-		return CSSResource(fileCache, cssCache, path)
+		request = context.get('_BetterFile_last_request')
+		return CSSResource(fileCache, cssCache, request, path)
 
 	return cssRewriter
 
@@ -348,6 +359,15 @@ class BetterFile(static.File):
 			# a dict of (absolute path) -> _CSSCacheEntry
 			self._cssCache = {}
 			self.processors['.css'] = makeCssRewriter(self._cssCache, fileCache)
+
+
+	def getChild(self, path, request):
+		# This is a bit of a hack, but it allows the `cssRewriter`
+		# processor to grab the request (which static.File.getChild sadly
+		# does not pass into it).
+		return context.call(
+			{'_BetterFile_last_request': request},
+			static.File.getChild, self, path, request)
 
 
 	def createSimilarFile(self, path):

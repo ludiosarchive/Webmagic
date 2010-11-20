@@ -99,7 +99,7 @@ def getBreakerForHref(fileCache, request, href):
 	"""
 	See L{getCacheBrokenHref} for argument description and warning.
 
-	@return: a C{str}, (md5sum of contents of href).
+	@return: a C{str}, (md5sum hexdigest of resource at href).
 	"""
 	return getBreakerForResource(fileCache, getResourceForHref(request, href))
 
@@ -111,7 +111,7 @@ def getCacheBrokenHref(fileCache, request, href):
 	@param href: a C{str}, a target pointing to a L{static.File} mounted
 		somewhere on C{request}'s site.
 
-	@return: a C{str}, C{href + '?cb=' + (md5sum of contents of href)}.
+	@return: a C{str}, C{href + '?cb=' + (md5sum hexdigest of resource at href)}.
 
 	Warning: the contents of the file at C{href} will be cached, and
 	items may stay in this cache forever.  Don't use this on

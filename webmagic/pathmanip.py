@@ -52,6 +52,20 @@ def getResourceForPath(site, path):
 	return getChildForRequest(rootResource, dummyRequest)
 
 
+def getResourceForHref(request, href):
+	"""
+	@param request: a L{Request} for the resource that contains C{href}.
+	@param href: a C{str} URL-encoded href, either relative or starting with
+		C{"/"}.
+
+	@return: a resource from C{site}'s resource tree that corresponds
+		to C{href}.
+	"""
+	joinedPath = urljoin(request.path, href)
+	site = request.channel.site
+	return getResourceForPath(site, joinedPath)
+
+
 def getBreakerForResource(fileCache, resource):
 	"""
 	@param fileCache: a L{filecache.FileCache}.
@@ -87,10 +101,7 @@ def getBreakerForHref(fileCache, request, href):
 
 	@return: a C{str}, (md5sum of contents of href).
 	"""
-	joinedPath = urljoin(request.path, href)
-	site = request.channel.site
-	staticResource = getResourceForPath(site, joinedPath)
-	return getBreakerForResource(fileCache, staticResource)
+	return getBreakerForResource(fileCache, getResourceForHref(request, href))
 
 
 def getCacheBrokenHref(fileCache, request, href):

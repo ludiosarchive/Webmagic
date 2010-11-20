@@ -2,7 +2,7 @@ import re
 import cssutils
 
 from webmagic.uriparse import urljoin
-from webmagic.pathmanip import getResourceForPath, getBreakerForResource
+from webmagic.pathmanip import getResourceForHref, getBreakerForResource
 
 
 # TODO: actually parse the CSS file
@@ -33,10 +33,8 @@ def fixUrls(fileCache, request, content):
 		if href.startswith('http://') or href.startswith('https://'):
 			pass
 		else:
-			# CSS works like this: the href is relative to the .css file.
-			joinedPath = urljoin(request.path, href)
-			site = request.channel.site
-			staticResource = getResourceForPath(site, joinedPath)
+			# Note: in a .css file, the href of the url(...) is relative to the .css file.
+			staticResource = getResourceForHref(request, href)
 			cbLink = href + '?cb=' + getBreakerForResource(fileCache, staticResource)
 			fnames.append(staticResource.path)
 			# TODO: don't do this

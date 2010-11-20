@@ -1,5 +1,6 @@
 from __future__ import with_statement
 
+import re
 import base64
 
 from twisted.trial import unittest
@@ -360,10 +361,12 @@ class BetterFileTests(unittest.TestCase):
 		child = resource.getChildForRequest(bf, request)
 		d = _util._render(child, request)
 		def _assert(_):
-			self.assertEqual("""\
-/* Processed by CSSResource */
-p { color: red; }
-""", ''.join(request.written))
+			out = "".join(request.written)
+			lines = out.split("\n")
+			self.assertTrue(re.match(r"/\* CSSResource processed (.{32}?) on (.*?) \*/", lines[0]), lines[0])
+			self.assertEqual("p { color: red; }", lines[1])
+			self.assertEqual("", lines[2])
+			self.assertEqual(3, len(lines))
 		d.addCallback(_assert)
 		return d
 

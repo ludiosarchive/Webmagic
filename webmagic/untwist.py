@@ -3,8 +3,10 @@ Various features to make using twisted.web to build real websites
 a bit more sane.
 """
 
-import cgi
 import binascii
+import cgi
+import time
+from datetime import datetime
 
 from twisted.web import resource, static, http, server
 from twisted.python import context, log
@@ -269,8 +271,11 @@ class CSSResource(BetterResource):
 		Return the processed CSS file as a C{str} and a C{list} of
 		absolute paths whose contents affect the processed CSS file.
 		"""
+		date = datetime.fromtimestamp(time.time()).isoformat()
 		fixedContent, fnames = fixUrls(self._fileCache, self._request, content)
-		return '/* Processed by CSSResource */\n' + fixedContent, fnames
+		out = '/* CSSResource processed %s on %s */\n%s' % (
+			md5hexdigest(content), date, fixedContent)
+		return out, fnames
 
 
 	def _getProcessedCSS(self):

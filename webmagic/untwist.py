@@ -233,6 +233,7 @@ class _CSSCacheEntry(object):
 		@param references: a C{list} of L{ReferencedFile}s that may affect
 			the content of C{processed}.
 		"""
+		assert not isinstance(processed, unicode), type(processed)
 		self.processed = processed
 		self.digest = digest
 		self.references = references

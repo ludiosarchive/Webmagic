@@ -358,9 +358,9 @@ class BetterFileTests(unittest.TestCase):
 
 	def _makeDummyRequest(self, postpath, path, site):
 		request = DummyRequest(postpath)
-		if path:
+		if path is not None:
 			request.path = path
-		if site:
+		if site is not None:
 			request.channel.site = site
 		return request
 

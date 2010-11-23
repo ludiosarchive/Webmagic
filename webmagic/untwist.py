@@ -5,9 +5,9 @@ a bit more sane.
 
 import binascii
 import cgi
-import functools
 import time
 from datetime import datetime
+from functools import partial
 
 from twisted.web import resource, static, server
 from twisted.web.http import HTTPChannel, datetimeToString
@@ -248,23 +248,48 @@ class _CSSCacheEntry(object):
 
 
 
-class CSSResource(BetterResource):
+class _SetCacheHeadersMix:
+	def _setCacheHeaders(self, request):
+		isSecure = request.isSecure()
+		if isSecure and self._httpsCachePublic:
+			privacy = 'public'
+		elif not isSecure and self._httpCachePublic:
+			privacy = 'public'
+		else:
+			privacy = 'private'
+
+		setRawHeaders = request.responseHeaders.setRawHeaders
+
+		timeNow = self._getTime()
+		# Even though twisted.web sets a Date header, set one ourselves to
+		# make sure that Date + cacheTime == Expires.
+		setRawHeaders('date', [datetimeToString(timeNow)])
+		setRawHeaders('expires', [datetimeToString(timeNow + self._cacheTime)])
+		setRawHeaders('cache-control', ['max-age: %d, %s' % (self._cacheTime, privacy)])
+
+
+
+class CSSResource(BetterResource, _SetCacheHeadersMix):
 	implements(ICacheBreaker)
 	isLeaf = True
 
-	def __init__(self, fileCache, cssCache, request, path):
+	def __init__(self, topLevelBF, request, path):
 		"""
-		@param fileCache: a L{filecache.FileCache}.
-		@param cssCache: a C{dict} mapping filenames to L{_CSSCacheEntry}
-			objects.
+		@param topLevelBF: a L{BetterFile}.
 		@param request: the L{server.Request} that is requesting this
 			resource.  Note: L{BetterFile} instantiates a new CSSResource
 			for each request.
 		@param path: a C{str}, the absolute path of the .css file.
 		"""
 		BetterResource.__init__(self)
-		self._fileCache = fileCache
-		self._cssCache = cssCache
+
+		self._cssCache = topLevelBF._cssCache
+		self._getTime = topLevelBF._getTime
+		self._fileCache = topLevelBF._fileCache
+		self._cacheTime = topLevelBF._cacheTime
+		self._httpCachePublic = topLevelBF._httpCachePublic
+		self._httpsCachePublic = topLevelBF._httpsCachePublic
+
 		self._request = request
 		self._path = path
 
@@ -341,25 +366,22 @@ class CSSResource(BetterResource):
 
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
-		# TODO: cache forever header
+		self._setCacheHeaders(request)
 
 		return self._getProcessedCSS()
 
 
 
-def makeCssRewriter(cssCache, fileCache):
-	def cssRewriter(path, registry):
-		"""
-		C{path} is a C{str} representing the absolute path of the .css file.
-		"""
-		request = context.get('_BetterFile_last_request')
-		return CSSResource(fileCache, cssCache, request, path)
-
-	return cssRewriter
+def _cssRewriter(topLevelBF, path, registry):
+	"""
+	C{path} is a C{str} representing the absolute path of the .css file.
+	"""
+	request = context.get('_BetterFile_last_request')
+	return CSSResource(topLevelBF, request, path)
 
 
 
-class BetterFile(static.File):
+class BetterFile(static.File, _SetCacheHeadersMix):
 	"""
 	A L{static.File} with a few modifications and new features:
 
@@ -415,6 +437,7 @@ class BetterFile(static.File):
 		"""
 		static.File.__init__(self, path, defaultType, ignoredExts, registry)
 		self._getTime = getTime
+		self._fileCache = fileCache
 		self._cacheTime = cacheTime
 		self._httpCachePublic = httpCachePublic
 		self._httpsCachePublic = httpsCachePublic
@@ -426,7 +449,10 @@ class BetterFile(static.File):
 					"If rewriteCss is true, you must also give a fileCache.")
 			# a dict of (absolute path) -> _CSSCacheEntry
 			self._cssCache = {}
-			self.processors['.css'] = makeCssRewriter(self._cssCache, fileCache)
+			# Note how a new .processors is not created after
+			# createSimilarFile, because rewriteCss is False in that
+			# case.  It sets a .processors afterwards.
+			self.processors['.css'] = partial(_cssRewriter, self)
 
 
 	def getChild(self, path, request):
@@ -452,27 +478,12 @@ class BetterFile(static.File):
 	# We don't want to cache error pages and directory listings, so we
 	# set a cache header only when creating a producer to send a file.
 	def makeProducer(self, request, fileForReading):
-		isSecure = request.isSecure()
-		if isSecure and self._httpsCachePublic:
-			privacy = 'public'
-		elif not isSecure and self._httpCachePublic:
-			privacy = 'public'
-		else:
-			privacy = 'private'
-
-		setRawHeaders = request.responseHeaders.setRawHeaders
-
-		timeNow = self._getTime()
-		# Even though twisted.web sets a Date header, set one ourselves to
-		# make sure that Date + cacheTime == Expires.
-		setRawHeaders('date', [datetimeToString(timeNow)])
-		setRawHeaders('expires', [datetimeToString(timeNow + self._cacheTime)])
-		setRawHeaders('cache-control', ['max-age: %d, %s' % (self._cacheTime, privacy)])
+		self._setCacheHeaders(request)
 		return static.File.makeProducer(self, request, fileForReading)
 
 
 
-MaxCacheBetterFile = functools.partial(BetterFile,
+MaxCacheBetterFile = partial(BetterFile,
 	cacheTime=(60*60*24*365), httpCachePublic=False, httpsCachePublic=True)
 
 

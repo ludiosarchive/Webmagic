@@ -380,10 +380,13 @@ class BetterFile(static.File):
 	def __init__(self, path, defaultType="text/html", ignoredExts=(),
 	registry=None, fileCache=None, rewriteCss=False):
 		"""
-		If rewriteCss=True, you must also pass a fileCache.  Do not use
-		rewriteCss=True if this directory contains untrusted CSS files,
-		because files referenced by the .css file may become permanently
-		cached.
+		@param fileCache: a L{filecache.FileCache}.
+
+		@param rewriteCss: If true, transparently rewrite .css files to
+			add cachebreakers.  If true, you must also pass a
+			C{fileCache}.  Do not use rewriteCss if this directory
+			contains untrusted CSS files, because files referenced by
+			the .css file may become permanently cached.
 		"""
 		static.File.__init__(self, path, defaultType, ignoredExts, registry)
 		self._cssCache = None

@@ -495,14 +495,6 @@ class BetterFile(static.File):
 
 
 
-MaxCacheBetterFile = partial(BetterFile,
-	cacheOptions=CacheOptions(
-		cacheTime=(60*60*24*365),
-		httpCachePublic=False,
-		httpsCachePublic=True))
-
-
-
 class ConnectionTrackingHTTPChannel(HTTPChannel):
 	"""
 	An L{HTTPChannel} that tells the factory about all connection

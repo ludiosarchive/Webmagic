@@ -359,13 +359,19 @@ def makeCssRewriter(cssCache, fileCache):
 
 class BetterFile(static.File):
 	"""
-	A L{static.File} that does not read any mimetypes from disk, to make sure
-	no accidental dependencies on on-disk files are created.
+	A L{static.File} with a few modifications and new features:
 
-	Also use mimetypes for maximum compatibility, instead of the ones
-	that are most-correct.
+	*	BetterFile does not read any mimetypes from OS-specific mimetype
+		files, to avoid creating accidental dependencies on them.
 
-	Also only allows index.html as the index page.
+	*	BetterFile use mimetypes for maximum compatibility, instead of the
+		ones that are most-correct.
+
+	*	BetterFile allows allows index.html as the index page.
+
+	*	BetterFile can transparently rewrite .css files to add cachebreakers
+		to url(...)s inside the .css file.  (Pass in a fileCache and
+		rewriteCss=True).
 	"""
 	contentTypes = loadCompatibleMimeTypes()
 

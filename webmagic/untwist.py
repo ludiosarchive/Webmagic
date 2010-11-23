@@ -386,11 +386,14 @@ class CSSResource(BetterResource):
 			"unexpected render_GET request: ",
 			request, " is not ", self._request)
 
+		# Do this before setting headers, in case it throws an exception.
+		processed = self._getProcessedCSS()
+
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
 		setHeadersOnRequest(request, self._cacheOptions, self._getTime)
 
-		return self._getProcessedCSS()
+		return processed
 
 
 

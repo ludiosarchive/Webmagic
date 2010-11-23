@@ -221,6 +221,51 @@ def loadCompatibleMimeTypes():
 	return contentTypes
 
 
+class CacheOptions(object):
+	__slots__ = ('cacheTime', 'httpCachePublic', 'httpsCachePublic')
+
+	def __init__(self, cacheTime, httpCachePublic, httpsCachePublic):
+		"""
+		@param cacheTime: Send headers that indicate that this resource
+			(and children) should be cached for this many seconds.  Don't
+			set this to over 1 year, because that violates the RFC
+			guidelines.
+
+		@param httpCachePublic: If true, for HTTP requests, send
+			"Cache-control: public" instead of "Cache-control: private".
+			Don't use this for gzip'ed resources because of buggy proxies;
+			see http://code.google.com/speed/page-speed/docs/caching.html
+
+		@param httpsCachePublic: If true, for HTTPS requests, send
+			"Cache-control: public" instead of "Cache-control: private".
+			This is useful for making Firefox 3+ cache HTTPS resources
+			to disk.
+		"""
+		self.cacheTime = cacheTime
+		self.httpCachePublic = httpCachePublic
+		self.httpsCachePublic = httpsCachePublic
+
+
+
+def setHeadersOnRequest(request, cacheOptions, getTime=time.time):
+	isSecure = request.isSecure()
+	if isSecure and cacheOptions.httpsCachePublic:
+		privacy = 'public'
+	elif not isSecure and cacheOptions.httpCachePublic:
+		privacy = 'public'
+	else:
+		privacy = 'private'
+
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	timeNow = getTime()
+	# Even though twisted.web sets a Date header, set one ourselves to
+	# make sure that Date + cacheTime == Expires.
+	setRawHeaders('date', [datetimeToString(timeNow)])
+	setRawHeaders('expires', [datetimeToString(timeNow + cacheOptions.cacheTime)])
+	setRawHeaders('cache-control', ['max-age: %d, %s' % (cacheOptions.cacheTime, privacy)])
+
+
 class _CSSCacheEntry(object):
 	__slots__ = ('processed', 'digest', 'references')
 
@@ -248,28 +293,7 @@ class _CSSCacheEntry(object):
 
 
 
-class _SetCacheHeadersMix:
-	def _setCacheHeaders(self, request):
-		isSecure = request.isSecure()
-		if isSecure and self._httpsCachePublic:
-			privacy = 'public'
-		elif not isSecure and self._httpCachePublic:
-			privacy = 'public'
-		else:
-			privacy = 'private'
-
-		setRawHeaders = request.responseHeaders.setRawHeaders
-
-		timeNow = self._getTime()
-		# Even though twisted.web sets a Date header, set one ourselves to
-		# make sure that Date + cacheTime == Expires.
-		setRawHeaders('date', [datetimeToString(timeNow)])
-		setRawHeaders('expires', [datetimeToString(timeNow + self._cacheTime)])
-		setRawHeaders('cache-control', ['max-age: %d, %s' % (self._cacheTime, privacy)])
-
-
-
-class CSSResource(BetterResource, _SetCacheHeadersMix):
+class CSSResource(BetterResource):
 	implements(ICacheBreaker)
 	isLeaf = True
 
@@ -286,9 +310,7 @@ class CSSResource(BetterResource, _SetCacheHeadersMix):
 		self._cssCache = topLevelBF._cssCache
 		self._getTime = topLevelBF._getTime
 		self._fileCache = topLevelBF._fileCache
-		self._cacheTime = topLevelBF._cacheTime
-		self._httpCachePublic = topLevelBF._httpCachePublic
-		self._httpsCachePublic = topLevelBF._httpsCachePublic
+		self._cacheOptions = topLevelBF._cacheOptions
 
 		self._request = request
 		self._path = path
@@ -366,7 +388,7 @@ class CSSResource(BetterResource, _SetCacheHeadersMix):
 
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
-		self._setCacheHeaders(request)
+		setHeadersOnRequest(request, self._cacheOptions, self._getTime)
 
 		return self._getProcessedCSS()
 
@@ -381,7 +403,7 @@ def _cssRewriter(topLevelBF, path, registry):
 
 
 
-class BetterFile(static.File, _SetCacheHeadersMix):
+class BetterFile(static.File):
 	"""
 	A L{static.File} with a few modifications and new features:
 
@@ -398,16 +420,15 @@ class BetterFile(static.File, _SetCacheHeadersMix):
 		rewriteCss=True).
 
 	*	BetterFile sets cache-related HTTP headers for you.  You can change
-		the headers with the C{cacheTime}, C{httpCachePublic}, and
-		C{httpsCachePublic} parameters.
+		the headers with the C{cacheOptions} parameter.
 	"""
 	contentTypes = loadCompatibleMimeTypes()
 
 	indexNames = ["index.html"]
 
 	def __init__(self, path, defaultType="text/html", ignoredExts=(),
-	registry=None, fileCache=None, rewriteCss=False, cacheTime=0,
-	httpCachePublic=False, httpsCachePublic=False, getTime=time.time):
+	registry=None, fileCache=None, rewriteCss=False, cacheOptions=None,
+	getTime=time.time):
 		"""
 		@param fileCache: a L{filecache.FileCache}.
 
@@ -417,30 +438,19 @@ class BetterFile(static.File, _SetCacheHeadersMix):
 			contains untrusted CSS files, because files referenced by
 			the .css file may become permanently cached.
 
-		@param cacheTime: Send headers that indicate that this resource
-			(and children) should be cached for this many seconds.  Don't
-			set this to over 1 year, because that violates the RFC
-			guidelines.
-
-		@param httpCachePublic: If true, for HTTP requests, send
-			"Cache-control: public" instead of "Cache-control: private".
-			Don't use this for gzip'ed resources because of buggy proxies;
-			see http://code.google.com/speed/page-speed/docs/caching.html
-
-		@param httpsCachePublic: If true, for HTTPS requests, send
-			"Cache-control: public" instead of "Cache-control: private".
-			This is useful for making Firefox 3+ cache HTTPS resources
-			to disk.
+		@param cacheOptions: A L{CacheOptions}.
 
 		@param getTime: a 0-arg callable that returns the current time as
 			seconds since epoch.
 		"""
 		static.File.__init__(self, path, defaultType, ignoredExts, registry)
+
+		if cacheOptions is None:
+			cacheOptions = CacheOptions(0, False, False)
+
 		self._getTime = getTime
 		self._fileCache = fileCache
-		self._cacheTime = cacheTime
-		self._httpCachePublic = httpCachePublic
-		self._httpsCachePublic = httpsCachePublic
+		self._cacheOptions = cacheOptions
 
 		self._cssCache = None
 		if rewriteCss:
@@ -470,21 +480,23 @@ class BetterFile(static.File, _SetCacheHeadersMix):
 		# pass in any of our special attributes to the constructor.
 		f._cssCache = self._cssCache
 		f._getTime = self._getTime
-		f._cacheTime = self._cacheTime
-		f._httpCachePublic = self._httpCachePublic
-		f._httpsCachePublic = self._httpsCachePublic
+		f._cacheOptions = self._cacheOptions
 		return f
+
 
 	# We don't want to cache error pages and directory listings, so we
 	# set a cache header only when creating a producer to send a file.
 	def makeProducer(self, request, fileForReading):
-		self._setCacheHeaders(request)
+		setHeadersOnRequest(request, self._cacheOptions, self._getTime)
 		return static.File.makeProducer(self, request, fileForReading)
 
 
 
 MaxCacheBetterFile = partial(BetterFile,
-	cacheTime=(60*60*24*365), httpCachePublic=False, httpsCachePublic=True)
+	cacheOptions=CacheOptions(
+		cacheTime=(60*60*24*365),
+		httpCachePublic=False,
+		httpsCachePublic=True))
 
 
 

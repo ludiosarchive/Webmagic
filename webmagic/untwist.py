@@ -5,10 +5,12 @@ a bit more sane.
 
 import binascii
 import cgi
+import functools
 import time
 from datetime import datetime
 
-from twisted.web import resource, static, http, server
+from twisted.web import resource, static, server
+from twisted.web.http import HTTPChannel, datetimeToString
 from twisted.python import context, log
 
 from zope.interface import implements
@@ -372,13 +374,18 @@ class BetterFile(static.File):
 	*	BetterFile can transparently rewrite .css files to add cachebreakers
 		to url(...)s inside the .css file.  (Pass in a fileCache and
 		rewriteCss=True).
+
+	*	BetterFile sets cache-related HTTP headers for you.  You can change
+		the headers with the C{cacheTime}, C{httpCachePublic}, and
+		C{httpsCachePublic} parameters.
 	"""
 	contentTypes = loadCompatibleMimeTypes()
 
 	indexNames = ["index.html"]
 
 	def __init__(self, path, defaultType="text/html", ignoredExts=(),
-	registry=None, fileCache=None, rewriteCss=False):
+	registry=None, fileCache=None, rewriteCss=False, cacheTime=0,
+	httpCachePublic=False, httpsCachePublic=False, getTime=time.time):
 		"""
 		@param fileCache: a L{filecache.FileCache}.
 
@@ -387,8 +394,31 @@ class BetterFile(static.File):
 			C{fileCache}.  Do not use rewriteCss if this directory
 			contains untrusted CSS files, because files referenced by
 			the .css file may become permanently cached.
+
+		@param cacheTime: Send headers that indicate that this resource
+			(and children) should be cached for this many seconds.  Don't
+			set this to over 1 year, because that violates the RFC
+			guidelines.
+
+		@param httpCachePublic: If true, for HTTP requests, send
+			"Cache-control: public" instead of "Cache-control: private".
+			Don't use this for gzip'ed resources because of buggy proxies;
+			see http://code.google.com/speed/page-speed/docs/caching.html
+
+		@param httpsCachePublic: If true, for HTTPS requests, send
+			"Cache-control: public" instead of "Cache-control: private".
+			This is useful for making Firefox 3+ cache HTTPS resources
+			to disk.
+
+		@param getTime: a 0-arg callable that returns the current time as
+			seconds since epoch.
 		"""
 		static.File.__init__(self, path, defaultType, ignoredExts, registry)
+		self._getTime = getTime
+		self._cacheTime = cacheTime
+		self._httpCachePublic = httpCachePublic
+		self._httpsCachePublic = httpsCachePublic
+
 		self._cssCache = None
 		if rewriteCss:
 			if not fileCache:
@@ -410,12 +440,44 @@ class BetterFile(static.File):
 
 	def createSimilarFile(self, path):
 		f = static.File.createSimilarFile(self, path)
+		# Remember to be careful in BetterFile.__init__, because we don't
+		# pass in any of our special attributes to the constructor.
 		f._cssCache = self._cssCache
+		f._getTime = self._getTime
+		f._cacheTime = self._cacheTime
+		f._httpCachePublic = self._httpCachePublic
+		f._httpsCachePublic = self._httpsCachePublic
 		return f
 
+	# We don't want to cache error pages and directory listings, so we
+	# set a cache header only when creating a producer to send a file.
+	def makeProducer(self, request, fileForReading):
+		isSecure = request.isSecure()
+		if isSecure and self._httpsCachePublic:
+			privacy = 'public'
+		elif not isSecure and self._httpCachePublic:
+			privacy = 'public'
+		else:
+			privacy = 'private'
+
+		setRawHeaders = request.responseHeaders.setRawHeaders
+
+		timeNow = self._getTime()
+		# Even though twisted.web sets a Date header, set one ourselves to
+		# make sure that Date + cacheTime == Expires.
+		setRawHeaders('date', [datetimeToString(timeNow)])
+		setRawHeaders('expires', [datetimeToString(timeNow + self._cacheTime)])
+		setRawHeaders('cache-control', ['max-age: %d, %s' % (self._cacheTime, privacy)])
+		return static.File.makeProducer(self, request, fileForReading)
 
 
-class ConnectionTrackingHTTPChannel(http.HTTPChannel):
+
+MaxCacheBetterFile = functools.partial(BetterFile,
+	cacheTime=(60*60*24*365), httpCachePublic=False, httpsCachePublic=True)
+
+
+
+class ConnectionTrackingHTTPChannel(HTTPChannel):
 	"""
 	An L{HTTPChannel} that tells the factory about all connection
 	activity.
@@ -423,17 +485,17 @@ class ConnectionTrackingHTTPChannel(http.HTTPChannel):
 	__slots__ = ()
 
 	def __init__(self, *args, **kwargs):
-		http.HTTPChannel.__init__(self, *args, **kwargs)
+		HTTPChannel.__init__(self, *args, **kwargs)
 
 
 	def connectionMade(self, *args, **kwargs):
-		http.HTTPChannel.connectionMade(self, *args, **kwargs)
+		HTTPChannel.connectionMade(self, *args, **kwargs)
 		log.msg('Connection made: %r' % (self,))
 		self.factory.connections.add(self)
 
 
 	def connectionLost(self, *args, **kwargs):
-		http.HTTPChannel.connectionLost(self, *args, **kwargs)
+		HTTPChannel.connectionLost(self, *args, **kwargs)
 		log.msg('Connection lost: %r' % (self,))
 		self.factory.connections.remove(self)
 

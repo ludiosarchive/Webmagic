@@ -10,7 +10,7 @@ except ImportError:
 from webmagic.uriparse import urljoin
 from webmagic.fakes import DummyRequest
 
-from twisted.web.resource import getChildForRequest
+from twisted.web.resource import getChildForRequest, NoResource
 
 _postImportVars = vars().keys()
 
@@ -97,13 +97,20 @@ def getBreakerForResource(fileCache, resource):
 	return breaker
 
 
+# Match the length of a normal digest
+_zeroedDigest = "0" * len(md5hexdigest(""))
+
 def getBreakerForHref(fileCache, request, href):
 	"""
 	See L{getCacheBrokenHref} for argument description and warning.
 
-	@return: a C{str}, (md5sum hexdigest of resource at href).
+	@return: a C{str}, (md5sum hexdigest of resource at href, or
+		L{_zeroedDigest} if resource not found).
 	"""
-	return getBreakerForResource(fileCache, getResourceForHref(request, href))
+	resource = getResourceForHref(request, href)
+	if isinstance(resource, NoResource):
+		return _zeroedDigest
+	return getBreakerForResource(fileCache, resource)
 
 
 def getCacheBrokenHref(fileCache, request, href):

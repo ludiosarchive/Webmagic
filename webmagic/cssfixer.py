@@ -3,7 +3,8 @@ import cssutils
 import operator
 
 from webmagic.uriparse import urljoin
-from webmagic.pathmanip import getResourceForHref, getBreakerForResource
+from webmagic.pathmanip import (
+	getResourceForHref, getBreakerForResource, makeLinkWithBreaker)
 
 _postImportVars = vars().keys()
 
@@ -59,10 +60,12 @@ def fixUrls(fileCache, request, content):
 			# Note: in a .css file, the href of the url(...) is relative to the .css file.
 			staticResource = getResourceForHref(request, href)
 			breaker = getBreakerForResource(fileCache, staticResource)
-			cbLink = href + '?cb=' + breaker
-			references.append(ReferencedFile(staticResource.path, breaker))
+			if breaker is not None:
+				references.append(ReferencedFile(staticResource.path, breaker))
 			# TODO: don't do this
-			content = content.replace("url(%s)" % href, "url(%s)" % cbLink, 1)
+			content = content.replace(
+				"url(%s)" % href,
+				"url(%s)" % makeLinkWithBreaker(href, breaker), 1)
 
 	return content, references
 

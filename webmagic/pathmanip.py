@@ -10,7 +10,7 @@ except ImportError:
 from webmagic.uriparse import urljoin
 from webmagic.fakes import DummyRequest
 
-from twisted.web.resource import getChildForRequest, NoResource
+from twisted.web.resource import getChildForRequest, ErrorPage
 
 _postImportVars = vars().keys()
 
@@ -68,19 +68,25 @@ def getResourceForHref(request, href):
 	return getResourceForPath(site, joinedPath)
 
 
+# Match the length of a normal digest
+_zeroedDigest = "0" * len(md5hexdigest(""))
+
 def getBreakerForResource(fileCache, resource):
 	"""
 	@param fileCache: a L{filecache.FileCache}.
-	@param resource: a L{static.File} or a subclass, which may or may not
-		provide L{ICacheBreaker}.
+	@param resource: a L{Resource}.  For a proper cachebreaker, must be a
+		L{static.File} or a subclass, which may or may not provide
+		L{ICacheBreaker}.
 
 	@return: a C{str} representing the md5sum hexdigest of the contents of
-		C{resource}.
+		C{resource}, or C{None} if C{resource} is an L{ErrorPage}.
 
 	Warning: the contents of C{resource}'s file will be cached, and items
 	may stay in this cache forever.  Don't use this on dynamically-
 	generated static files.
 	"""
+	if isinstance(resource, ErrorPage):
+		return None
 	# First try the getCacheBreaker method on the Resource, otherwise
 	# assume it is a static.File and calculate the breaker ourselves.
 	getCacheBreaker = getattr(resource, 'getCacheBreaker', None)
@@ -97,20 +103,26 @@ def getBreakerForResource(fileCache, resource):
 	return breaker
 
 
-# Match the length of a normal digest
-_zeroedDigest = "0" * len(md5hexdigest(""))
-
 def getBreakerForHref(fileCache, request, href):
 	"""
 	See L{getCacheBrokenHref} for argument description and warning.
 
 	@return: a C{str}, (md5sum hexdigest of resource at href, or
-		L{_zeroedDigest} if resource not found).
+		C{None} if resource not found).
 	"""
-	resource = getResourceForHref(request, href)
-	if isinstance(resource, NoResource):
-		return _zeroedDigest
-	return getBreakerForResource(fileCache, resource)
+	return getBreakerForResource(fileCache, getResourceForHref(request, href))
+
+
+def makeLinkWithBreaker(href, breakerOrNone):
+	"""
+	@param href: a C{str}.
+	@param breakerOrNone: a C{str} or C{None}.
+
+	@return: a C{str}.
+	"""
+	if breakerOrNone is None:
+		breakerOrNone = 'not-found'
+	return href + '?cb=' + breakerOrNone
 
 
 def getCacheBrokenHref(fileCache, request, href):
@@ -126,7 +138,7 @@ def getCacheBrokenHref(fileCache, request, href):
 	items may stay in this cache forever.  Don't use this on
 	dynamically-generated static files.
 	"""
-	return href + '?cb=' + getBreakerForHref(fileCache, request, href)
+	return makeLinkWithBreaker(href, getBreakerForHref(fileCache, request, href))
 
 
 from pypycpyo import optimizer

@@ -53,6 +53,7 @@ def fixUrls(fileCache, request, content):
 	"""
 	references = []
 	urls = _getUrlsHack(content)
+	missingBreakers = []
 	for href in urls:
 		if href.startswith('http://') or href.startswith('https://'):
 			pass
@@ -62,10 +63,23 @@ def fixUrls(fileCache, request, content):
 			breaker = getBreakerForResource(fileCache, staticResource)
 			if breaker is not None:
 				references.append(ReferencedFile(staticResource.path, breaker))
+			else:
+				missingBreakers.append(href)
 			# TODO: don't do this
 			content = content.replace(
 				"url(%s)" % href,
 				"url(%s)" % makeLinkWithBreaker(href, breaker), 1)
+			if missingBreakers:
+				content += """\
+body:before {
+	content: "Warning: webmagic.cssfixer could not add cachebreakers in %r for %r";
+	position: relative;
+	z-index: 1000000;
+	font-size: 16px;
+	color: darkred;
+	background-color: white;
+}
+""" % (request.path, missingBreakers)
 
 	return content, references
 

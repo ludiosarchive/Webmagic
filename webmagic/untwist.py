@@ -275,7 +275,6 @@ def setHeadersOnRequest(request, cacheOptions, getTime=time.time):
 		setRawHeaders('cache-control', ['max-age=0, private'])
 
 
-
 class _CSSCacheEntry(object):
 	__slots__ = ('processed', 'digest', 'references')
 

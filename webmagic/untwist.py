@@ -505,6 +505,7 @@ class BetterFile(static.File):
 	# We don't want to cache error pages and directory listings, so we
 	# set a cache header only when creating a producer to send a file.
 	def makeProducer(self, request, fileForReading):
+		##print "makeProducer setting cache headers:", self, self._responseCacheOptions
 		setHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
 		return static.File.makeProducer(self, request, fileForReading)
 

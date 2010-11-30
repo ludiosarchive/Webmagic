@@ -221,7 +221,7 @@ def loadCompatibleMimeTypes():
 	return contentTypes
 
 
-class CacheOptions(object):
+class ResponseCacheOptions(object):
 	__slots__ = ('cacheTime', 'httpCachePublic', 'httpsCachePublic')
 
 	def __init__(self, cacheTime, httpCachePublic, httpsCachePublic):
@@ -310,7 +310,7 @@ class CSSResource(BetterResource):
 		self._cssCache = topLevelBF._cssCache
 		self._getTime = topLevelBF._getTime
 		self._fileCache = topLevelBF._fileCache
-		self._cacheOptions = topLevelBF._cacheOptions
+		self._responseCacheOptions = topLevelBF._responseCacheOptions
 
 		self._request = request
 		self._path = path
@@ -391,7 +391,7 @@ class CSSResource(BetterResource):
 
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
-		setHeadersOnRequest(request, self._cacheOptions, self._getTime)
+		setHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
 
 		return processed
 
@@ -430,8 +430,8 @@ class BetterFile(static.File):
 	indexNames = ["index.html"]
 
 	def __init__(self, path, defaultType="text/html", ignoredExts=(),
-	registry=None, fileCache=None, rewriteCss=False, cacheOptions=None,
-	getTime=time.time):
+	registry=None, fileCache=None, rewriteCss=False,
+	responseCacheOptions=None, getTime=time.time):
 		"""
 		@param fileCache: a L{filecache.FileCache}.
 
@@ -441,19 +441,19 @@ class BetterFile(static.File):
 			contains untrusted CSS files, because files referenced by
 			the .css file may become permanently cached.
 
-		@param cacheOptions: A L{CacheOptions}.
+		@param responseCacheOptions: A L{ResponseCacheOptions}.
 
 		@param getTime: a 0-arg callable that returns the current time as
 			seconds since epoch.
 		"""
 		static.File.__init__(self, path, defaultType, ignoredExts, registry)
 
-		if cacheOptions is None:
-			cacheOptions = CacheOptions(0, False, False)
+		if responseCacheOptions is None:
+			responseCacheOptions = ResponseCacheOptions(0, False, False)
 
 		self._getTime = getTime
 		self._fileCache = fileCache
-		self._cacheOptions = cacheOptions
+		self._responseCacheOptions = responseCacheOptions
 
 		self._cssCache = None
 		if rewriteCss:
@@ -483,14 +483,14 @@ class BetterFile(static.File):
 		# pass in any of our special attributes to the constructor.
 		f._cssCache = self._cssCache
 		f._getTime = self._getTime
-		f._cacheOptions = self._cacheOptions
+		f._responseCacheOptions = self._responseCacheOptions
 		return f
 
 
 	# We don't want to cache error pages and directory listings, so we
 	# set a cache header only when creating a producer to send a file.
 	def makeProducer(self, request, fileForReading):
-		setHeadersOnRequest(request, self._cacheOptions, self._getTime)
+		setHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
 		return static.File.makeProducer(self, request, fileForReading)
 
 

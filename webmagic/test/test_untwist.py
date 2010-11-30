@@ -555,10 +555,10 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		rco = ResponseCacheOptions(
 			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
 		request = DummyRequest([])
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 		self.assertEqual({
-			'Cache-Control': ['max-age: 3600, private'],
+			'Cache-Control': ['max-age=3600, private'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
 			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT']},
 		dict(request.responseHeaders.getAllRawHeaders()))
@@ -570,10 +570,10 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
 		request = DummyRequest([])
 		request.isSecure = lambda: True
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 		self.assertEqual({
-			'Cache-Control': ['max-age: 3600, public'],
+			'Cache-Control': ['max-age=3600, public'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
 			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT']},
 		dict(request.responseHeaders.getAllRawHeaders()))
@@ -593,11 +593,29 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		request.responseHeaders.setRawHeaders('date', ['whenever'])
 		request.responseHeaders.setRawHeaders('expires', ['sometime'])
 		request.responseHeaders.setRawHeaders('extra', ['one', 'two'])
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
 		self.assertEqual({
-			'Cache-Control': ['max-age: 3600, private'],
+			'Cache-Control': ['max-age=3600, private'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
 			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT'],
 			'Extra': ['one', 'two']},
+		dict(request.responseHeaders.getAllRawHeaders()))
+
+
+	def test_noCache(self):
+		"""
+		If C{cacheTime} is 0, appropriate headers are set.
+		"""
+		clock = Clock()
+		rco = ResponseCacheOptions(
+			cacheTime=0, httpCachePublic=True, httpsCachePublic=True)
+		request = DummyRequest([])
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+
+		self.assertEqual({
+			'Cache-Control': ['max-age=0, private'],
+			# A Date header is set even in this case.
+			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
+			'Expires': ['-1']},
 		dict(request.responseHeaders.getAllRawHeaders()))

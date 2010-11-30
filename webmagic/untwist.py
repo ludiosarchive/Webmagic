@@ -241,6 +241,7 @@ class ResponseCacheOptions(object):
 			This is useful for making Firefox 3+ cache HTTPS resources
 			to disk.
 		"""
+		assert cacheTime >= 0, cacheTime
 		self.cacheTime = cacheTime
 		self.httpCachePublic = httpCachePublic
 		self.httpsCachePublic = httpsCachePublic
@@ -248,22 +249,31 @@ class ResponseCacheOptions(object):
 
 
 def setHeadersOnRequest(request, cacheOptions, getTime=time.time):
-	isSecure = request.isSecure()
-	if isSecure and cacheOptions.httpsCachePublic:
-		privacy = 'public'
-	elif not isSecure and cacheOptions.httpCachePublic:
-		privacy = 'public'
-	else:
-		privacy = 'private'
-
+	cacheTime = cacheOptions.cacheTime
 	setRawHeaders = request.responseHeaders.setRawHeaders
 
 	timeNow = getTime()
 	# Even though twisted.web sets a Date header, set one ourselves to
 	# make sure that Date + cacheTime == Expires.
 	setRawHeaders('date', [datetimeToString(timeNow)])
-	setRawHeaders('expires', [datetimeToString(timeNow + cacheOptions.cacheTime)])
-	setRawHeaders('cache-control', ['max-age: %d, %s' % (cacheOptions.cacheTime, privacy)])
+
+	if cacheTime != 0:
+		isSecure = request.isSecure()
+		if isSecure and cacheOptions.httpsCachePublic:
+			privacy = 'public'
+		elif not isSecure and cacheOptions.httpCachePublic:
+			privacy = 'public'
+		else:
+			privacy = 'private'
+
+		setRawHeaders('expires',
+			[datetimeToString(timeNow + cacheOptions.cacheTime)])
+		setRawHeaders('cache-control',
+			['max-age=%d, %s' % (cacheOptions.cacheTime, privacy)])
+	else:
+		setRawHeaders('expires', ['-1'])
+		setRawHeaders('cache-control', ['max-age=0, private'])
+
 
 
 class _CSSCacheEntry(object):

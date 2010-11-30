@@ -608,6 +608,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		If C{cacheTime} is 0, appropriate headers are set.
 		"""
 		clock = Clock()
+		# Even though these are both public=True, it correctly sets ", private".
 		rco = ResponseCacheOptions(
 			cacheTime=0, httpCachePublic=True, httpsCachePublic=True)
 		request = DummyRequest([])

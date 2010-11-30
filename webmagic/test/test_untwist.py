@@ -546,6 +546,14 @@ i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 
 
 
+class TestResponseCacheOptions(unittest.TestCase):
+
+	def test_repr(self):
+		rco = ResponseCacheOptions(2, True, False)
+		self.assertEqual('ResponseCacheOptions(2, True, False)', repr(rco))
+
+
+
 class TestSetHeadersOnRequest(unittest.TestCase):
 	"""
 	Tests for L{untwist.setHeadersOnRequest}

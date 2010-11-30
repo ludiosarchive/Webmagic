@@ -247,6 +247,12 @@ class ResponseCacheOptions(object):
 		self.httpsCachePublic = httpsCachePublic
 
 
+	def __repr__(self):
+		return '%s(%r, %r, %r)' % (
+			self.__class__.__name__,
+			self.cacheTime, self.httpCachePublic, self.httpsCachePublic)
+
+
 
 def setHeadersOnRequest(request, cacheOptions, getTime=time.time):
 	cacheTime = cacheOptions.cacheTime

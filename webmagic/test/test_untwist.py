@@ -16,7 +16,7 @@ from mypy.filecache import FileCache
 from webmagic.fakes import DummyChannel, DummyRequest
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,
-	_CSSCacheEntry, BetterFile,
+	_CSSCacheEntry, BetterFile, ResponseCacheOptions, setHeadersOnRequest
 )
 
 
@@ -543,3 +543,61 @@ i { background-image: url(/sub/sub%%20sub/three.png?cb=%(md5three)s); }
 		self.assertRaises(
 			NotImplementedError,
 			lambda: BetterFile('nonexistent', rewriteCss=True))
+
+
+
+class TestSetHeadersOnRequest(unittest.TestCase):
+	"""
+	Tests for L{untwist.setHeadersOnRequest}
+	"""
+	def test_httpRequest(self):
+		clock = Clock()
+		rco = ResponseCacheOptions(
+			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
+		request = DummyRequest([])
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+
+		self.assertEqual({
+			'Cache-Control': ['max-age: 3600, private'],
+			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
+			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT']},
+		dict(request.responseHeaders.getAllRawHeaders()))
+
+
+	def test_httpsRequest(self):
+		clock = Clock()
+		rco = ResponseCacheOptions(
+			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
+		request = DummyRequest([])
+		request.isSecure = lambda: True
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+
+		self.assertEqual({
+			'Cache-Control': ['max-age: 3600, public'],
+			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
+			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT']},
+		dict(request.responseHeaders.getAllRawHeaders()))
+
+
+	def test_requestAlreadyHasHeaders(self):
+		"""
+		If the request passed to L{setHeadersOnRequest} already has headers,
+		existing Date/Expires/Cache-Control headers are replaced, and
+		irrelevant ones are kept.
+		"""
+		clock = Clock()
+		rco = ResponseCacheOptions(
+			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
+		request = DummyRequest([])
+		request.responseHeaders.setRawHeaders('cache-control', ['X', 'Y'])
+		request.responseHeaders.setRawHeaders('date', ['whenever'])
+		request.responseHeaders.setRawHeaders('expires', ['sometime'])
+		request.responseHeaders.setRawHeaders('extra', ['one', 'two'])
+		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+
+		self.assertEqual({
+			'Cache-Control': ['max-age: 3600, private'],
+			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
+			'Expires': ['Thu, 01 Jan 1970 01:00:00 GMT'],
+			'Extra': ['one', 'two']},
+		dict(request.responseHeaders.getAllRawHeaders()))

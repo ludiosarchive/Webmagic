@@ -2,6 +2,8 @@
 Better fakes than those that come with Twisted.
 """
 
+import sys
+
 from zope.interface import implements
 
 from twisted.internet import address, interfaces, task
@@ -213,5 +215,10 @@ class MockProducer(GetNewMixin):
 
 
 
-from pypycpyo import optimizer
-optimizer.bind_all_many(vars(), _postImportVars)
+try:
+	from mypy import refbinder
+except ImportError:
+	pass
+else:
+	refbinder.bindRecursive(sys.modules[__name__], _postImportVars)
+	del refbinder

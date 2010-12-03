@@ -1,3 +1,4 @@
+import sys
 import re
 import cssutils
 import operator
@@ -84,5 +85,10 @@ body:before {
 	return content, references
 
 
-from pypycpyo import optimizer
-optimizer.bind_all_many(vars(), _postImportVars)
+try:
+	from mypy import refbinder
+except ImportError:
+	pass
+else:
+	refbinder.bindRecursive(sys.modules[__name__], _postImportVars)
+	del refbinder

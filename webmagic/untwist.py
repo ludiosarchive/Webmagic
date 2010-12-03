@@ -3,6 +3,7 @@ Various features to make using twisted.web to build real websites
 a bit more sane.
 """
 
+import sys
 import binascii
 import cgi
 import time
@@ -562,5 +563,10 @@ class DisplayConnections(BetterResource):
 
 
 
-from pypycpyo import optimizer
-optimizer.bind_all_many(vars(), _postImportVars)
+try:
+	from mypy import refbinder
+except ImportError:
+	pass
+else:
+	refbinder.bindRecursive(sys.modules[__name__], _postImportVars)
+	del refbinder

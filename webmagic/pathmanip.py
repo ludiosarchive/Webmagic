@@ -1,3 +1,5 @@
+import sys
+
 from zope.interface import Interface
 
 from mypy.transforms import md5hexdigest
@@ -141,5 +143,10 @@ def getCacheBrokenHref(fileCache, request, href):
 	return makeLinkWithBreaker(href, getBreakerForHref(fileCache, request, href))
 
 
-from pypycpyo import optimizer
-optimizer.bind_all_many(vars(), _postImportVars)
+try:
+	from mypy import refbinder
+except ImportError:
+	pass
+else:
+	refbinder.bindRecursive(sys.modules[__name__], _postImportVars)
+	del refbinder

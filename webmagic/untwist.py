@@ -432,7 +432,7 @@ class BetterFile(static.File):
 	*	BetterFile use mimetypes for maximum compatibility, instead of the
 		ones that are most-correct.
 
-	*	BetterFile allows allows index.html as the index page.
+	*	BetterFile allows only index.html as the index page.
 
 	*	BetterFile can transparently rewrite .css files to add cachebreakers
 		to url(...)s inside the .css file.  (Pass in a fileCache and
@@ -449,7 +449,8 @@ class BetterFile(static.File):
 	registry=None, fileCache=None, rewriteCss=False,
 	responseCacheOptions=None, getTime=time.time):
 		"""
-		@param fileCache: a L{filecache.FileCache}.
+		@param fileCache: a L{filecache.FileCache}, used only to cache
+			resources referenced by .css files.
 
 		@param rewriteCss: If true, transparently rewrite .css files to
 			add cachebreakers.  If true, you must also pass a

@@ -92,6 +92,58 @@ class CookieInstaller(object):
 
 
 
+def setDefaultHeadersOnRequest(request):
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	# http://hackademix.net/2009/11/21/ies-xss-filter-creates-xss-vulnerabilities/
+	# Since the March 2010 update, Internet Explorer 8 also supports the
+	# X-XSS-Protection: 1; mode=block header.  Google now uses this.
+	setRawHeaders('x-xss-protection', ['1; mode=block'])
+
+	# Prevent IE8 from from mime-sniffing a response.
+	setRawHeaders('x-content-type-options', ['nosniff'])
+
+	# twisted.web.server sets "text/html", which sometimes leads to XSS
+	# due to UTF-7 sniffing in IE6 and IE7.
+	setRawHeaders('content-type', ['text/html; charset=UTF-8'])
+
+
+def setCachingHeadersOnRequest(request, cacheOptions, getTime=time.time):
+	cacheTime = cacheOptions.cacheTime
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	timeNow = getTime()
+	# Even though twisted.web sets a Date header, set one ourselves to
+	# make sure that Date + cacheTime == Expires.
+	setRawHeaders('date', [datetimeToString(timeNow)])
+
+	if cacheTime != 0:
+		isSecure = request.isSecure()
+		if isSecure and cacheOptions.httpsCachePublic:
+			privacy = 'public'
+		elif not isSecure and cacheOptions.httpCachePublic:
+			privacy = 'public'
+		else:
+			privacy = 'private'
+
+		setRawHeaders('expires',
+			[datetimeToString(timeNow + cacheOptions.cacheTime)])
+		setRawHeaders('cache-control',
+			['max-age=%d, %s' % (cacheOptions.cacheTime, privacy)])
+	else:
+		setRawHeaders('expires', ['-1'])
+		setRawHeaders('cache-control', ['max-age=0, private'])
+
+
+def setNoCacheNoStoreHeaders(request):
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	# Headers are similar to the ones gmail sends
+	setRawHeaders('cache-control', ['no-cache, no-store, max-age=0, must-revalidate'])
+	setRawHeaders('pragma', ['no-cache'])
+	setRawHeaders('expires', ['-1'])
+
+
 class HelpfulNoResource(resource.ErrorPage):
 	template = """\
 <!doctype html>
@@ -275,58 +327,6 @@ class ResponseCacheOptions(object):
 			self.__class__.__name__,
 			self.cacheTime, self.httpCachePublic, self.httpsCachePublic)
 
-
-
-def setDefaultHeadersOnRequest(request):
-	setRawHeaders = request.responseHeaders.setRawHeaders
-
-	# http://hackademix.net/2009/11/21/ies-xss-filter-creates-xss-vulnerabilities/
-	# Since the March 2010 update, Internet Explorer 8 also supports the
-	# X-XSS-Protection: 1; mode=block header.  Google now uses this.
-	setRawHeaders('x-xss-protection', ['1; mode=block'])
-
-	# Prevent IE8 from from mime-sniffing a response.
-	setRawHeaders('x-content-type-options', ['nosniff'])
-
-	# twisted.web.server sets "text/html", which sometimes leads to XSS
-	# due to UTF-7 sniffing in IE6 and IE7.
-	setRawHeaders('content-type', ['text/html; charset=UTF-8'])
-
-
-def setCachingHeadersOnRequest(request, cacheOptions, getTime=time.time):
-	cacheTime = cacheOptions.cacheTime
-	setRawHeaders = request.responseHeaders.setRawHeaders
-
-	timeNow = getTime()
-	# Even though twisted.web sets a Date header, set one ourselves to
-	# make sure that Date + cacheTime == Expires.
-	setRawHeaders('date', [datetimeToString(timeNow)])
-
-	if cacheTime != 0:
-		isSecure = request.isSecure()
-		if isSecure and cacheOptions.httpsCachePublic:
-			privacy = 'public'
-		elif not isSecure and cacheOptions.httpCachePublic:
-			privacy = 'public'
-		else:
-			privacy = 'private'
-
-		setRawHeaders('expires',
-			[datetimeToString(timeNow + cacheOptions.cacheTime)])
-		setRawHeaders('cache-control',
-			['max-age=%d, %s' % (cacheOptions.cacheTime, privacy)])
-	else:
-		setRawHeaders('expires', ['-1'])
-		setRawHeaders('cache-control', ['max-age=0, private'])
-
-
-def setNoCacheNoStoreHeaders(request):
-	setRawHeaders = request.responseHeaders.setRawHeaders
-
-	# Headers are similar to the ones gmail sends
-	setRawHeaders('cache-control', ['no-cache, no-store, max-age=0, must-revalidate'])
-	setRawHeaders('pragma', ['no-cache'])
-	setRawHeaders('expires', ['-1'])
 
 
 class _CSSCacheEntry(object):

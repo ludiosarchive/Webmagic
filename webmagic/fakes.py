@@ -66,6 +66,7 @@ class FakeReactor(GetNewMixin):
 class DummyTCPTransport(StringTransport):
 
 	def __init__(self, *args, **kwargs):
+		self.aborted = False
 		StringTransport.__init__(self, *args, **kwargs)
 
 
@@ -93,6 +94,13 @@ class DummyTCPTransport(StringTransport):
 
 	def getTcpKeepAlive(self):
 		return self.keepAliveEnabled
+
+
+	# StringTransport.abortConnection doesn't exist at this writing
+	def abortConnection(self):
+		self.unregisterProducer()
+		self.aborted = True
+		self.disconnecting = True
 
 
 

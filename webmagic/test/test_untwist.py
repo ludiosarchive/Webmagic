@@ -16,7 +16,7 @@ from mypy.filecache import FileCache
 from webmagic.fakes import DummyChannel, DummyRequest
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,
-	_CSSCacheEntry, BetterFile, ResponseCacheOptions, setHeadersOnRequest
+	_CSSCacheEntry, BetterFile, ResponseCacheOptions, setCachingHeadersOnRequest
 )
 
 
@@ -144,12 +144,20 @@ class NonLeafPlainResource(resource.Resource):
 
 class BetterResourceTests(unittest.TestCase):
 
+	def _makeSite(self, r):
+		try:
+			site = server.Site(r, clock=Clock())
+		except TypeError:
+			site = server.Site(r)
+		return site
+
+
 	def test_rootURLNotRedirectedWithLeafRoot(self):
 		req = DummyRequest([''])
 		req.uri = '/'
 
 		r = Leaf()
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, Leaf), res)
 
@@ -159,7 +167,7 @@ class BetterResourceTests(unittest.TestCase):
 		req.uri = '/'
 
 		r = NonLeafWithIndexChild()
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, Leaf), res)
 
@@ -171,7 +179,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, Leaf), res)
 
@@ -183,7 +191,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.assertEqual("/hello/", res._location)
@@ -196,7 +204,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithIndexChild()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.assertEqual("/hello/", res._location)
@@ -209,7 +217,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithNonLeafIndexChild()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, RedirectingResource), res)
 		self.assertEqual("/hello/", res._location)
@@ -222,7 +230,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithNonLeafIndexChild()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, Leaf), res)
 
@@ -234,7 +242,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = LeafPlainResource()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, LeafPlainResource), res)
 
@@ -246,7 +254,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafPlainResource()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, NonLeafPlainResource), res)
 
@@ -258,7 +266,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = NonLeafWithChildChild()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
@@ -277,7 +285,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		nothello = Leaf()
 		r.putChild('nothello', nothello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
@@ -289,7 +297,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
@@ -301,7 +309,7 @@ class BetterResourceTests(unittest.TestCase):
 		r = NonLeaf()
 		hello = Leaf()
 		r.putChild('hello', hello)
-		site = server.Site(r, clock=Clock())
+		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, HelpfulNoResource), res)
 
@@ -316,7 +324,7 @@ class BetterResourceTests(unittest.TestCase):
 #		r = NonLeaf()
 #		hello = Leaf()
 #		r.putChild('hello', hello)
-#		site = server.Site(r, clock=Clock())
+#		site = self._makeSite(r)
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.assertEqual("/hello/", res._location)
@@ -327,7 +335,7 @@ class BetterResourceTests(unittest.TestCase):
 #		req.uri = '//'
 #
 #		r = Leaf()
-#		site = server.Site(r, clock=Clock())
+#		site = self._makeSite(r)
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.assertEqual("/", res._location)
@@ -338,7 +346,7 @@ class BetterResourceTests(unittest.TestCase):
 #		req.uri = '//'
 #
 #		r = NonLeafWithIndexChild()
-#		site = server.Site(r, clock=Clock())
+#		site = self._makeSite(r)
 #		res = site.getResourceFor(req)
 #		self.assertTrue(isinstance(res, RedirectingResource), res)
 #		self.assertEqual("/", res._location)
@@ -378,7 +386,7 @@ class BetterFileTests(unittest.TestCase):
 		Test that CSS processing works, and verify the header.
 		"""
 		clock = Clock()
-		fc = FileCache(lambda: clock.rightNow, 1)
+		fc = FileCache(lambda: clock.seconds(), 1)
 		temp = FilePath(self.mktemp() + '.css')
 		with temp.open('wb') as f:
 			f.write("p { color: red; }\n")
@@ -406,7 +414,7 @@ class BetterFileTests(unittest.TestCase):
 		file changes.
 		"""
 		clock = Clock()
-		fc = FileCache(lambda: clock.rightNow, 1)
+		fc = FileCache(lambda: clock.seconds(), 1)
 		temp = FilePath(self.mktemp() + '.css')
 		temp.setContent("p { color: red; }\n")
 
@@ -484,7 +492,7 @@ i { background-image: url(/sub/sub%20sub/three.png); }
 		processed .css is updated.
 		"""
 		clock = Clock()
-		fc = FileCache(lambda: clock.rightNow, 1)
+		fc = FileCache(lambda: clock.seconds(), 1)
 		parent, t = self._makeTree()
 		root = BetterFile(parent.path, fileCache=fc, rewriteCss=True)
 		site = server.Site(root)
@@ -554,9 +562,9 @@ class TestResponseCacheOptions(unittest.TestCase):
 
 
 
-class TestSetHeadersOnRequest(unittest.TestCase):
+class TestsetCachingHeadersOnRequest(unittest.TestCase):
 	"""
-	Tests for L{untwist.setHeadersOnRequest}
+	Tests for L{untwist.setCachingHeadersOnRequest}
 	"""
 	def test_httpRequest(self):
 		clock = Clock()
@@ -564,7 +572,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 			cacheTime=3600, httpCachePublic=False, httpsCachePublic=True)
 		request = DummyRequest([])
 
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+		setCachingHeadersOnRequest(request, rco, getTime=lambda: clock.seconds())
 		self.assertEqual({
 			'Cache-Control': ['max-age=3600, private'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
@@ -579,7 +587,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		request = DummyRequest([])
 		request.isSecure = lambda: True
 
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+		setCachingHeadersOnRequest(request, rco, getTime=lambda: clock.seconds())
 		self.assertEqual({
 			'Cache-Control': ['max-age=3600, public'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
@@ -589,7 +597,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 
 	def test_requestAlreadyHasHeaders(self):
 		"""
-		If the request passed to L{setHeadersOnRequest} already has headers,
+		If the request passed to L{setCachingHeadersOnRequest} already has headers,
 		existing Date/Expires/Cache-Control headers are replaced, and
 		irrelevant ones are kept.
 		"""
@@ -602,7 +610,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		request.responseHeaders.setRawHeaders('expires', ['sometime'])
 		request.responseHeaders.setRawHeaders('extra', ['one', 'two'])
 
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+		setCachingHeadersOnRequest(request, rco, getTime=lambda: clock.seconds())
 		self.assertEqual({
 			'Cache-Control': ['max-age=3600, private'],
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
@@ -620,7 +628,7 @@ class TestSetHeadersOnRequest(unittest.TestCase):
 		rco = ResponseCacheOptions(
 			cacheTime=0, httpCachePublic=True, httpsCachePublic=True)
 		request = DummyRequest([])
-		setHeadersOnRequest(request, rco, getTime=lambda: clock.rightNow)
+		setCachingHeadersOnRequest(request, rco, getTime=lambda: clock.seconds())
 
 		self.assertEqual({
 			'Cache-Control': ['max-age=0, private'],

@@ -148,6 +148,15 @@ class RedirectingResource(resource.Resource):
 
 class BetterResource(resource.Resource):
 	"""
+	A L{resource.Resource} with two improvements:
+
+	*	/page and /page/ are forced to be the same thing (/page is
+		redirected to /page/)
+
+	*	Additional response headers are set for security reasons.
+
+	Implementation notes:
+
 	By default, twisted.web Resources with `isLeaf = True`:
 		- do not serve 404s if a URL is accessed as /page/extracrud
 		- do not redirect /page -> /page/, or /cat/page -> /cat/page/
@@ -162,6 +171,11 @@ class BetterResource(resource.Resource):
 
 #	def __init__(self):
 #		resource.Resource.__init__(self)
+
+
+	def render(self, request):
+		setDefaultHeadersOnRequest(request)
+		return resource.Resource.render(self, request)
 
 
 	def getChildWithDefault(self, path, request):
@@ -255,7 +269,23 @@ class ResponseCacheOptions(object):
 
 
 
-def setHeadersOnRequest(request, cacheOptions, getTime=time.time):
+def setDefaultHeadersOnRequest(request):
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	# http://hackademix.net/2009/11/21/ies-xss-filter-creates-xss-vulnerabilities/
+	# Since the March 2010 update, Internet Explorer 8 also supports the
+	# X-XSS-Protection: 1; mode=block header.  Google now uses this.
+	setRawHeaders('x-xss-protection', ['1; mode=block'])
+
+	# Prevent IE8 from from mime-sniffing a response.
+	setRawHeaders('x-content-type-options', ['nosniff'])
+
+	# twisted.web.server sets "text/html", which sometimes leads to XSS
+	# due to UTF-7 sniffing in IE6 and IE7.
+	setRawHeaders('content-type', ['text/html; charset=UTF-8'])
+
+
+def setCachingHeadersOnRequest(request, cacheOptions, getTime=time.time):
 	cacheTime = cacheOptions.cacheTime
 	setRawHeaders = request.responseHeaders.setRawHeaders
 
@@ -407,7 +437,7 @@ class CSSResource(BetterResource):
 
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
-		setHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
+		setCachingHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
 
 		return processed
 
@@ -508,7 +538,8 @@ class BetterFile(static.File):
 	# set a cache header only when creating a producer to send a file.
 	def makeProducer(self, request, fileForReading):
 		##print "makeProducer setting cache headers:", self, self._responseCacheOptions
-		setHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
+		setDefaultHeadersOnRequest(request)
+		setCachingHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
 		return static.File.makeProducer(self, request, fileForReading)
 
 

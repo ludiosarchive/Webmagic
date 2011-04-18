@@ -163,6 +163,11 @@ class HelpfulNoResource(resource.ErrorPage):
 			self, 404, "404 Not Found", message)
 
 
+	def render(self, request):
+		setDefaultHeadersOnRequest(request)
+		return resource.Resource.render(self, request)
+
+
 
 class RedirectingResource(resource.Resource):
 	template = """\
@@ -189,11 +194,12 @@ class RedirectingResource(resource.Resource):
 
 
 	def render(self, request):
+		setDefaultHeadersOnRequest(request)
 		request.setResponseCode(self._code)
 		# twisted.web z9trunk protects against response-splitting, so we don't
 		# need to do anything to the Location header.
 		# Also, this is a relative redirect; non-standard, but all browsers accept it.
-		request.responseHeaders._rawHeaders['location'] = [self._location]
+		request.responseHeaders.setRawHeaders('location', [self._location])
 		return self.template % {'escaped': cgi.escape(self._location)}
 
 

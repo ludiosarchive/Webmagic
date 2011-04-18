@@ -79,6 +79,22 @@ class DummyTCPTransport(StringTransport):
 		self.producer = None
 
 
+	def setTcpNoDelay(self, enabled):
+		self.noDelayEnabled = bool(enabled)
+
+
+	def getTcpNoDelay(self):
+		return self.noDelayEnabled
+
+
+	def setTcpKeepAlive(self, enabled):
+		self.keepAliveEnabled = bool(enabled)
+
+
+	def getTcpKeepAlive(self):
+		return self.keepAliveEnabled
+
+
 
 # copy/paste from twisted.web.test.test_web, but added a setTcpNoDelay
 class DummyChannel(object):

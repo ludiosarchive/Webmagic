@@ -175,7 +175,15 @@ class BetterResource(resource.Resource):
 
 	def render(self, request):
 		setDefaultHeadersOnRequest(request)
-		return resource.Resource.render(self, request)
+		try:
+			return resource.Resource.render(self, request)
+		except:
+			# Set no-cache headers, to make sure the error page doesn't
+			# get cached.
+			setNoCacheNoStoreHeaders(request)
+			# re-raise the exception, resulting in a call to
+			# twisted.web.server.Request.processingFailed
+			raise
 
 
 	def getChildWithDefault(self, path, request):
@@ -310,6 +318,15 @@ def setCachingHeadersOnRequest(request, cacheOptions, getTime=time.time):
 	else:
 		setRawHeaders('expires', ['-1'])
 		setRawHeaders('cache-control', ['max-age=0, private'])
+
+
+def setNoCacheNoStoreHeaders(request):
+	setRawHeaders = request.responseHeaders.setRawHeaders
+
+	# Headers are similar to the ones gmail sends
+	setRawHeaders('cache-control', ['no-cache, no-store, max-age=0, must-revalidate'])
+	setRawHeaders('pragma', ['no-cache'])
+	setRawHeaders('expires', ['-1'])
 
 
 class _CSSCacheEntry(object):

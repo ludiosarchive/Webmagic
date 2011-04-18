@@ -149,7 +149,10 @@ class DummyChannel(object):
 	def __init__(self, clock=None):
 		if clock is None:
 			clock = task.Clock()
-		self.site = server.Site(resource.Resource(), clock=clock)
+		try:
+			self.site = server.Site(resource.Resource(), clock=clock)
+		except TypeError:
+			self.site = server.Site(resource.Resource())
 		self.transport = self.TCP()
 
 

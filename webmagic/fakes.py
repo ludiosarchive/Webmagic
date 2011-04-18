@@ -167,6 +167,7 @@ class DummyRequest(_TwistedDummyRequest):
 		_TwistedDummyRequest.__init__(self, *args, **kwargs)
 
 		self.startedWriting = False
+		self._disconnected = False
 
 		# This is needed because _BaseHTTPTransport does
 		#     self.request.channel.transport.setTcpNoDelay(True)
@@ -178,6 +179,11 @@ class DummyRequest(_TwistedDummyRequest):
 	def write(self, data):
 		self.startedWriting = True
 		_TwistedDummyRequest.write(self, data)
+
+
+	def processingFailed(self, reason):
+		self._disconnected = True
+		_TwistedDummyRequest.processingFailed(self, reason)
 
 
 	def setHeader(self, name, value):

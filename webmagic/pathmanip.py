@@ -5,8 +5,8 @@ from zope.interface import Interface
 from mypy.transforms import md5hexdigest
 
 from urllib import unquote
+from urlparse import urljoin
 
-from webmagic.uriparse import urljoin
 from webmagic.fakes import DummyRequest
 
 from twisted.web.resource import getChildForRequest, ErrorPage

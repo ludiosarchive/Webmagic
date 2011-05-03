@@ -1,3 +1,3 @@
 #!/bin/sh -e
 
-python -N -W all `which trial` webmagic
+python -W all `which trial` webmagic

@@ -27,7 +27,8 @@ class CookieInstallerTests(unittest.TestCase):
 
 
 	def _reset(self):
-		self.c = CookieInstaller(secureRandom=lambda nbytes: 'x'*nbytes) # not very random at all
+		# not very random at all
+		self.c = CookieInstaller(secureRandom=lambda nbytes: 'x' * nbytes)
 		self.request = http.Request(DummyChannel(), None)
 
 
@@ -35,7 +36,8 @@ class CookieInstallerTests(unittest.TestCase):
 		sess = self.c.getSet(self.request)
 		self.assertEqual('x' * 16, sess)
 		self.assertEqual(
-			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % base64.b64encode('x' * 16)],
+			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % (
+				base64.b64encode('x' * 16),)],
 			self.request.cookies)
 
 
@@ -44,7 +46,8 @@ class CookieInstallerTests(unittest.TestCase):
 		sess = self.c.getSet(self.request)
 		self.assertEqual('x' * 16, sess)
 		self.assertEqual(
-			['_s=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/; Secure' % base64.b64encode('x' * 16)],
+			['_s=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/; Secure' % (
+				base64.b64encode('x' * 16),)],
 			self.request.cookies)
 
 
@@ -64,7 +67,8 @@ class CookieInstallerTests(unittest.TestCase):
 			"\x00",
 			base64.b64encode('z' * 15),
 			base64.b64encode('z' * 17),
-			base64.b64encode('z' * 16).rstrip("="), # TODO: maybe support padding-free base64 in future
+			# TODO: maybe support padding-free base64 in future
+			base64.b64encode('z' * 16).rstrip("="),
 			base64.b64encode('z' * 16) + "\x00",
 			base64.b64encode('z' * 16) + ";",
 			base64.b64encode('z' * 16) + "=",
@@ -75,7 +79,8 @@ class CookieInstallerTests(unittest.TestCase):
 			sess = self.c.getSet(self.request)
 			self.assertEqual('x' * 16, sess)
 			self.assertEqual(
-				['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % base64.b64encode('x' * 16)],
+				['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Path=/' % (
+					base64.b64encode('x' * 16),)],
 				self.request.cookies)
 
 
@@ -84,12 +89,15 @@ class CookieInstallerTests(unittest.TestCase):
 		class MyCookieInstaller(CookieInstaller):
 			__slots__ = ()
 			domain = ".customdomain.com"
-		self.c = MyCookieInstaller(secureRandom=lambda nbytes: 'x'*nbytes) # not very random at all
+		# not very random at all
+		self.c = MyCookieInstaller(secureRandom=lambda nbytes: 'x' * nbytes)
 
 		sess = self.c.getSet(self.request)
 		self.assertEqual('x' * 16, sess)
 		self.assertEqual(
-			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; Domain=.customdomain.com; Path=/' % base64.b64encode('x' * 16)],
+			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; '
+			'Domain=.customdomain.com; Path=/' % (
+				base64.b64encode('x' * 16),)],
 			self.request.cookies)
 
 
@@ -163,7 +171,8 @@ class BetterResourceTests(unittest.TestCase):
 
 
 	def test_rootURLNotRedirectedWithNonLeafRoot(self):
-		req = DummyRequest(['']) # the '' is necessary for this test, not for the above
+		# the '' is necessary for this test, not for the above
+		req = DummyRequest([''])
 		req.uri = '/'
 
 		r = NonLeafWithIndexChild()
@@ -224,7 +233,8 @@ class BetterResourceTests(unittest.TestCase):
 
 
 	def test_normalRequestToNonLeafNonLeafNotRedirected(self):
-		req = DummyRequest(['hello', '', '']) # ugh. need to do integration testing and send real requests
+		# ugh. need to do integration testing and send real requests
+		req = DummyRequest(['hello', '', ''])
 		req.uri = '/hello/'
 
 		r = NonLeaf()

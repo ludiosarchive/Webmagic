@@ -4,10 +4,7 @@ from zope.interface import Interface
 
 from mypy.transforms import md5hexdigest
 
-try:
-	from twisted.protocols._c_urlarg import unquote
-except ImportError:
-	from urllib import unquote
+from urllib import unquote
 
 from webmagic.uriparse import urljoin
 from webmagic.fakes import DummyRequest

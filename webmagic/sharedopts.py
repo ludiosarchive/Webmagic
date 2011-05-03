@@ -7,7 +7,10 @@ from __future__ import with_statement
 from twisted.python import usage
 
 
-class BaseOptions(usage.Options):
+class WebOptions(usage.Options):
+	"""
+	An L{Options} that servers with a web component might want to subclass.
+	"""
 	optParameters	 = [
 		["secret", "s", None,
 			"A secret string used when generating CSRF tokens. "

@@ -223,12 +223,9 @@ class BetterResource(resource.Resource):
 	This aims to normalize the behavior, such that it looks for /page/'s
 	children even when either /page or /page/ are fetched.
 	"""
+	_debugGetChild = False
 
 	# TODO: allow customizing behavior: options addSlashes and rejectExtra.
-
-#	def __init__(self):
-#		resource.Resource.__init__(self)
-
 
 	def render(self, request):
 		setDefaultHeadersOnRequest(request)
@@ -254,35 +251,44 @@ class BetterResource(resource.Resource):
 		The implementation is not eager to add slashes first. If the resource
 		won't be found anyway, it returns 404s instead of redirects.
 		"""
-		##noisy = False
-
-		##if noisy: print "XXX", self, 'looking at path', path
-		##if noisy: print "XXX", request.prepath, request.postpath, request.uri
-		##if noisy: print "XXX", request.prePathURL(), request.URLPath()
+		if self._debugGetChild:
+			log.msg("BetterResource: %r looking at path %r" % (self, path))
+			log.msg("BetterResource: prepath=%r postpath=%r uri=%r" % (
+				request.prepath, request.postpath, request.uri))
 
 		# 404 requests for which there is no suitable Resource
 		if not path in self.children:
-			##if noisy: print "XXX Returning 404 because no suitable resource"
+			if self._debugGetChild:
+				log.msg("BetterResource: Returning 404 "
+					"because no suitable resource")
 			return HelpfulNoResource()
 
 		# 404 requests that have extra crud
 		if self.children[path].isLeaf and request.postpath not in ([], ['']):
-			##if noisy: print "XXX Returning 404 because request has extra crud"
+			if self._debugGetChild:
+				log.msg("BetterResource: Returning 404 "
+					"because request has extra crud")
 			return HelpfulNoResource()
 
 		# Redirect from /page -> /page/ and so on. This needs to happen even
 		# if not `self.children[path].isLeaf`.
 		# Note: static.File instances are not `isLeaf`
-		if request.postpath == [] and request.prepath[-1] != '' and isinstance(self.children[path], BetterResource):
+		if request.postpath == [] and request.prepath[-1] != '' and \
+		isinstance(self.children[path], BetterResource):
 			# Avoid redirecting if the '' child for the target Resource doesn't exist
 			if not ('' in self.children[path].children or self.children[path].isLeaf):
-				##if noisy: print "XXX Returning 404 because target resource doesn't exist anyway"
+				if self._debugGetChild:
+					log.msg("BetterResource: Returning 404 "
+						"because target resource doesn't exist anyway")
 				return HelpfulNoResource()
 
-			# This is a non-standard relative redirect, which all browsers support.
-			# Note that request.uri are the raw octets that client sent in their GET/POST line.
-			##if noisy: print "XXX Redirecting to", request.uri + '/'
-			return RedirectingResource(301, request.uri + '/')
+			# This is a non-standard relative redirect, which all
+			# browsers support.  Note that request.uri are the raw octets
+			# that client sent in their GET/POST line.
+			target = request.uri + '/'
+			if self._debugGetChild:
+				log.msg("BetterResource: Redirecting to %r" % (target,))
+			return RedirectingResource(301, target)
 
 		return self.children[path]
 
@@ -459,7 +465,8 @@ class CSSResource(BetterResource):
 
 		request.responseHeaders.setRawHeaders('content-type',
 			['text/css; charset=UTF-8'])
-		setCachingHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
+		setCachingHeadersOnRequest(
+			request, self._responseCacheOptions, self._getTime)
 
 		return processed
 
@@ -481,8 +488,8 @@ class BetterFile(static.File):
 	*	BetterFile does not read any mimetypes from OS-specific mimetype
 		files, to avoid creating accidental dependencies on them.
 
-	*	BetterFile use mimetypes for maximum compatibility, instead of the
-		ones that are most-correct.
+	*	BetterFile uses mimetypes that are maximally compatible instead of
+		most-correct.
 
 	*	BetterFile allows only index.html as the index page.
 
@@ -561,7 +568,8 @@ class BetterFile(static.File):
 	def makeProducer(self, request, fileForReading):
 		##print "makeProducer setting cache headers:", self, self._responseCacheOptions
 		setDefaultHeadersOnRequest(request)
-		setCachingHeadersOnRequest(request, self._responseCacheOptions, self._getTime)
+		setCachingHeadersOnRequest(
+			request, self._responseCacheOptions, self._getTime)
 		return static.File.makeProducer(self, request, fileForReading)
 
 

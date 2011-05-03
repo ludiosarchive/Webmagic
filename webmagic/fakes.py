@@ -52,7 +52,8 @@ class DumbLog(GetNewMixin):
 
 
 class FakeReactor(GetNewMixin):
-	# TODO	: implements() IReactorCore interface? or whatever addSystemEventTrigger is part of?
+	# TODO: implements() IReactorCore interface? or whatever
+	# addSystemEventTrigger is part of?
 
 	def __init__(self, *args, **kargs):
 		self.log = []
@@ -72,10 +73,9 @@ class DummyTCPTransport(StringTransport):
 
 	def unregisterProducer(self):
 		"""
-		StringTransport does some weird stuff.
-
-		Real twisted code doesn't raise RuntimeError if no producer is registered.
-		Real twisted code doesn't set <streamingTransportVar> = None
+		StringTransport does some weird stuff, so do something more
+		like the Twisted implementation: don't raise RuntimeError if
+		no producer is registered, and don't set self.streaming.
 		"""
 		self.producer = None
 
@@ -108,7 +108,8 @@ class DummyTCPTransport(StringTransport):
 class DummyChannel(object):
 	requestIsDone = False
 
-	# TODO: probably use DummyTCPTransport instead of this less-featured `class TCP'
+	# TODO: probably use DummyTCPTransport instead of this
+	# `class TCP' which has fewer features.
 	class TCP(object):
 		port = 80
 		socket = None

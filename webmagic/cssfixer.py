@@ -1,9 +1,7 @@
 import sys
 import re
-import cssutils
 import operator
 
-from webmagic.uriparse import urljoin
 from webmagic.pathmanip import (
 	getResourceForHref, getBreakerForResource, makeLinkWithBreaker)
 

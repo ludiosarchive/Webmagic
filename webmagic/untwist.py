@@ -7,7 +7,6 @@ import sys
 import binascii
 import cgi
 import time
-from datetime import datetime
 from functools import partial
 
 from twisted.web import resource, static, server

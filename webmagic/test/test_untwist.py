@@ -11,8 +11,7 @@ from twisted.internet.task import Clock
 from twisted.web.test import _util
 from twisted.web import http, server, resource
 
-from mypy.filecache import FileCache
-
+from webmagic.filecache import FileCache
 from webmagic.fakes import DummyChannel, DummyRequest
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,

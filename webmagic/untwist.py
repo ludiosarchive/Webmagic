@@ -15,7 +15,7 @@ from twisted.python import context, log
 
 from zope.interface import implements
 
-from mypy.transforms import md5hexdigest
+from webmagic.transforms import md5hexdigest
 from webmagic.pathmanip import ICacheBreaker
 from webmagic.cssfixer import fixUrls
 

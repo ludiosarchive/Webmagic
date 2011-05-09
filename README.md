@@ -11,8 +11,6 @@ Requirements
 
 *	Twisted
 
-*	Mypy
-
 
 Installation
 ============

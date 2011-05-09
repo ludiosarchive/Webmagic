@@ -7,7 +7,9 @@ import webmagic
 setup(
 	name='Webmagic',
 	version=webmagic.__version__,
-	description="A collection of Twisted and twisted.web-related utilities.",
+	description=("twisted.web-related utilities involving cookies, "
+		"caching headers, cachebreakers, /page -> /page/ "
+		"redirection, and more"),
 	url="https://github.com/ludios/Webmagic",
 	author="Ivan Kozik",
 	author_email="ivan@ludios.org",

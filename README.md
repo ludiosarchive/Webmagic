@@ -1,7 +1,10 @@
 Webmagic overview
 =================
 
-Webmagic is a collection of Twisted and twisted.web-related utilities.
+Webmagic is a collection of twisted.web-related utilities involving cookies,
+caching headers, cachebreakers, /page -> /page/ redirection, and more.
+
+[TODO: describe everything]
 
 
 Requirements
@@ -28,8 +31,6 @@ Install Twisted, then run `trial webmagic`
 
 Wishlist
 ========
-
-*	Document all modules in README.md
 
 *	In `webmagic.cssfixer`, use cssutils instead of a regexp to modify the CSS.
 

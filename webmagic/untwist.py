@@ -625,10 +625,6 @@ class DisplayConnections(BetterResource):
 
 
 
-try:
-	from mypy import refbinder
-except ImportError:
-	pass
-else:
-	refbinder.bindRecursive(sys.modules[__name__], _postImportVars)
-	del refbinder
+try: from refbinder.api import bindRecursive
+except ImportError: pass
+else: bindRecursive(sys.modules[__name__], _postImportVars)

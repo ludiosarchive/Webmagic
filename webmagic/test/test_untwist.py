@@ -27,7 +27,10 @@ class CookieInstallerTests(unittest.TestCase):
 
 	def _reset(self):
 		# not very random at all
-		self.c = CookieInstaller(secureRandom=lambda nbytes: 'x' * nbytes)
+		self.c = CookieInstaller(
+			secureRandom=lambda nbytes: 'x' * nbytes,
+			insecureName='__',
+			secureName='_s')
 		self.request = http.Request(DummyChannel(), None)
 
 
@@ -89,7 +92,10 @@ class CookieInstallerTests(unittest.TestCase):
 			__slots__ = ()
 			domain = ".customdomain.com"
 		# not very random at all
-		self.c = MyCookieInstaller(secureRandom=lambda nbytes: 'x' * nbytes)
+		self.c = MyCookieInstaller(
+			secureRandom=lambda nbytes: 'x' * nbytes,
+			insecureName='__',
+			secureName='_s')
 
 		sess = self.c.getSet(self.request)
 		self.assertEqual('x' * 16, sess)

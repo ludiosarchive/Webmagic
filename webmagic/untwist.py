@@ -24,15 +24,10 @@ _postImportVars = vars().keys()
 
 class CookieInstaller(object):
 	"""
-	Gets or sets a session cookie on a L{twisted.web.server.Request} object.
+	Gets or sets an 16-byte identifier cookie on a L{twisted.web.server.Request}
+	object.
 	"""
-	__slots__ = ('_secureRandom',)
-
-	# Sent to HTTP and HTTPS.
-	insecureCookieName = '__'
-
-	# Sent only over HTTPS. The cookie name is different so that it does not collide.
-	secureCookieName = '_s'
+	__slots__ = ('_secureRandom', '_insecureName', '_secureName')
 
 	expires = 'Sat, 08 Dec 2029 23:55:42 GMT' # copied from Amazon
 
@@ -43,12 +38,24 @@ class CookieInstaller(object):
 	# TODO: maybe add some functionality to get/set the insecure cookie
 	# during HTTPS requests as well.
 
-	def __init__(self, secureRandom):
+	def __init__(self, secureRandom, insecureName, secureName):
 		"""
-		C{secureRandom} is a 1-argument (# of bytes) callable that returns a
-			string of # random bytes.
+		@param secureRandom: a 1-argument (# of bytes) callable that
+			returns a string of # random bytes.  You probably want to
+			pass L{os.urandom}.
+		@type secureRandom: function
+
+		@param insecureName: the cookie name for a cookie that will be sent by
+			client for both HTTP and HTTPS requests.
+		@type insecureName: C{str}
+
+		@param secureName: the cookie name for a cookie that will be sent by
+			client for HTTPS requests.  Don't use the same name as C{insecureName}.
+		@type secureName: C{str}
 		"""
 		self._secureRandom = secureRandom
+		self._insecureName = insecureName
+		self._secureName = secureName
 
 
 	def getSet(self, request):
@@ -68,9 +75,9 @@ class CookieInstaller(object):
 		"""
 		secure = request.isSecure()
 		if secure:
-			k = self.secureCookieName
+			k = self._secureName
 		else:
-			k = self.insecureCookieName
+			k = self._insecureName
 
 		existingCookie = request.getCookie(k)
 

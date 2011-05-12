@@ -84,7 +84,8 @@ class CookieInstaller(object):
 		# If we allow base64 without padding, change to allow both 22 and 24.
 		if existingCookie and len(existingCookie) == 24:
 			try:
-				# Keep in mind that a2b_base64 will skip over non-base64-alphabet characters.
+				# Keep in mind that a2b_base64 will skip over
+				# non-base64-alphabet characters.
 				decoded = binascii.a2b_base64(existingCookie)
 				if len(decoded) == 16:
 					return decoded
@@ -93,7 +94,8 @@ class CookieInstaller(object):
 
 		rand = self._secureRandom(16)
 		v = binascii.b2a_base64(rand).rstrip('\n')
-		request.addCookie(k, v, expires=self.expires, domain=self.domain, path=self.path, secure=secure)
+		request.addCookie(k, v, expires=self.expires, domain=self.domain,
+			path=self.path, secure=secure)
 		return rand
 
 
@@ -145,7 +147,8 @@ def setNoCacheNoStoreHeaders(request):
 	setRawHeaders = request.responseHeaders.setRawHeaders
 
 	# Headers are similar to the ones gmail sends
-	setRawHeaders('cache-control', ['no-cache, no-store, max-age=0, must-revalidate'])
+	setRawHeaders('cache-control', [
+		'no-cache, no-store, max-age=0, must-revalidate'])
 	setRawHeaders('pragma', ['no-cache'])
 	setRawHeaders('expires', ['-1'])
 

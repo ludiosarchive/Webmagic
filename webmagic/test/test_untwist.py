@@ -87,21 +87,48 @@ class CookieInstallerTests(unittest.TestCase):
 
 
 	def test_installsCookieWithCustomDomain(self):
-		del self.c
-		class MyCookieInstaller(CookieInstaller):
-			__slots__ = ()
-			domain = ".customdomain.com"
-		# not very random at all
-		self.c = MyCookieInstaller(
+		self.c = CookieInstaller(
 			secureRandom=lambda nbytes: 'x' * nbytes,
 			insecureName='__',
-			secureName='_s')
+			secureName='_s',
+			domain='.customdomain.com')
 
 		sess = self.c.getSet(self.request)
 		self.assertEqual('x' * 16, sess)
 		self.assertEqual(
 			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; '
 			'Domain=.customdomain.com; Path=/' % (
+				base64.b64encode('x' * 16),)],
+			self.request.cookies)
+
+
+	def test_installsCookieWithCustomPath(self):
+		self.c = CookieInstaller(
+			secureRandom=lambda nbytes: 'x' * nbytes,
+			insecureName='__',
+			secureName='_s',
+			path='/what')
+
+		sess = self.c.getSet(self.request)
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual(
+			['__=%s; Expires=Sat, 08 Dec 2029 23:55:42 GMT; '
+			'Path=/what' % (
+				base64.b64encode('x' * 16),)],
+			self.request.cookies)
+
+
+	def test_installsCookieWithCustomExpires(self):
+		self.c = CookieInstaller(
+			secureRandom=lambda nbytes: 'x' * nbytes,
+			insecureName='__',
+			secureName='_s',
+			expires='NEVER EVER')
+
+		sess = self.c.getSet(self.request)
+		self.assertEqual('x' * 16, sess)
+		self.assertEqual(
+			['__=%s; Expires=NEVER EVER; Path=/' % (
 				base64.b64encode('x' * 16),)],
 			self.request.cookies)
 

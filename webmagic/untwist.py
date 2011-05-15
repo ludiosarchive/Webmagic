@@ -27,18 +27,14 @@ class CookieInstaller(object):
 	Gets or sets an 16-byte identifier cookie on a L{twisted.web.server.Request}
 	object.
 	"""
-	__slots__ = ('_secureRandom', '_insecureName', '_secureName')
-
-	expires = 'Sat, 08 Dec 2029 23:55:42 GMT' # copied from Amazon
-
-	path = '/'
-
-	domain = None
+	__slots__ = ('_secureRandom', '_insecureName', '_secureName', '_domain',
+		'_path', '_expires')
 
 	# TODO: maybe add some functionality to get/set the insecure cookie
 	# during HTTPS requests as well.
 
-	def __init__(self, secureRandom, insecureName, secureName):
+	def __init__(self, secureRandom, insecureName, secureName,
+	domain=None, path='/', expires='Sat, 08 Dec 2029 23:55:42 GMT'):
 		"""
 		@param secureRandom: a 1-argument (# of bytes) callable that
 			returns a string of # random bytes.  You probably want to
@@ -56,6 +52,9 @@ class CookieInstaller(object):
 		self._secureRandom = secureRandom
 		self._insecureName = insecureName
 		self._secureName = secureName
+		self._domain = domain
+		self._path = path
+		self._expires = expires
 
 
 	def getSet(self, request):
@@ -94,8 +93,8 @@ class CookieInstaller(object):
 
 		rand = self._secureRandom(16)
 		v = binascii.b2a_base64(rand).rstrip('\n')
-		request.addCookie(k, v, expires=self.expires, domain=self.domain,
-			path=self.path, secure=secure)
+		request.addCookie(k, v, expires=self._expires, domain=self._domain,
+			path=self._path, secure=secure)
 		return rand
 
 

@@ -81,7 +81,7 @@ class CookieInstaller(object):
 
 		existingCookie = request.getCookie(k)
 
-		# If we allow base64 without padding, change to allow both 22 and 24.
+		# If we ever allow base64 without padding, change to allow both 22 and 24.
 		if existingCookie and len(existingCookie) == 24:
 			try:
 				# Keep in mind that a2b_base64 will skip over

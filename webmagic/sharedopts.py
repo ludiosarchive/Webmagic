@@ -11,7 +11,7 @@ class WebOptions(usage.Options):
 	"""
 	An L{Options} that servers with a web component might want to subclass.
 	"""
-	optParameters	 = [
+	optParameters = [
 		["secret", "s", None,
 			"A secret string used when generating CSRF tokens. "
 			"If you have users, don't change it. Make this 32 bytes or longer."],

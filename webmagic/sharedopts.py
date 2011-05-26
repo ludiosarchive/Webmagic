@@ -16,13 +16,13 @@ class WebOptions(usage.Options):
 			"A secret string used when generating CSRF tokens. "
 			"If you have users, don't change it. Make this 32 bytes or longer."],
 
-		["secretfile", "f", None,
+		["secret-file", "f", None,
 			"A file containing the secret string used when generating CSRF tokens. "
 			"See description for --secret."],
 	]
 
 	optFlags = [
-		["notracebacks", "n", "Don't display tracebacks on the public interfaces."],
+		["no-tracebacks", "n", "Don't display tracebacks on the public interfaces."],
 	]
 
 	def _checkSecret(self, secret):

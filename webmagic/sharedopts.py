@@ -39,7 +39,7 @@ class WebOptions(usage.Options):
 		self['secret'] = secret
 
 
-	def opt_secretfile(self, secretfile):
+	def opt_secret_file(self, secretfile):
 		with open(secretfile, 'rb') as f:
 			secret = f.read().strip()
 		self._checkSecret(secret)

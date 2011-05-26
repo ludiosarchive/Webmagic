@@ -48,4 +48,4 @@ class WebOptions(usage.Options):
 
 	def postOptions(self):
 		if not self['secret']:
-			raise usage.UsageError("A CSRF secret is required (--secret or --secretfile).")
+			raise usage.UsageError("A CSRF secret is required (--secret or --secret-file).")

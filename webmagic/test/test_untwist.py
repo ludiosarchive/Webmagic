@@ -7,8 +7,8 @@ import hashlib
 from twisted.trial import unittest
 
 from twisted.python.filepath import FilePath
+from twisted.internet.defer import succeed
 from twisted.internet.task import Clock
-from twisted.web.test import _util
 from twisted.web import http, server, resource
 
 from webmagic.filecache import FileCache
@@ -404,6 +404,21 @@ class CSSCacheEntryTests(unittest.TestCase):
 
 
 
+def _render(resource, request):
+	result = resource.render(request)
+	if isinstance(result, str):
+		request.write(result)
+		request.finish()
+		return succeed(None)
+	elif result is server.NOT_DONE_YET:
+		if request.finished:
+			return succeed(None)
+		else:
+			return request.notifyFinish()
+	else:
+		raise ValueError("Unexpected return value: %r" % (result,))
+
+
 class BetterFileTests(unittest.TestCase):
 
 	def _makeDummyRequest(self, postpath, path, site):
@@ -418,7 +433,7 @@ class BetterFileTests(unittest.TestCase):
 	def _requestPostpathAndRender(self, baseResource, postpath, path=None, site=None):
 		request = self._makeDummyRequest(postpath, path, site)
 		child = resource.getChildForRequest(baseResource, request)
-		d = _util._render(child, request)
+		d = _render(child, request)
 		d.addCallback(lambda _: (request, child))
 		return d
 

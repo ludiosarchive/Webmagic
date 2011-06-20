@@ -12,7 +12,7 @@ Requirements
 
 *	zope.interface
 
-*	Twisted
+*	Twisted >= 8.2.0
 
 
 Installation

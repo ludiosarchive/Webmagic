@@ -10,6 +10,12 @@ import time
 from functools import partial
 
 from twisted.web import resource, static, server
+try:
+	# Twisted >= 9.0
+	from twisted.web.resource import ErrorPage
+except ImportError:
+	from twisted.web.error import ErrorPage
+
 from twisted.web.http import HTTPChannel, datetimeToString
 from twisted.python import context, log
 
@@ -152,7 +158,7 @@ def setNoCacheNoStoreHeaders(request):
 	setRawHeaders('expires', ['-1'])
 
 
-class HelpfulNoResource(resource.ErrorPage):
+class HelpfulNoResource(ErrorPage):
 	template = """\
 <!doctype html>
 <html>
@@ -167,7 +173,7 @@ class HelpfulNoResource(resource.ErrorPage):
 </html>"""
 
 	def __init__(self, message='Page not found. <a href="/">See the index?</a>'):
-		resource.ErrorPage.__init__(
+		ErrorPage.__init__(
 			self, 404, "404 Not Found", message)
 
 

@@ -8,7 +8,12 @@ from urlparse import urljoin
 from webmagic.fakes import DummyRequest
 from webmagic.transforms import md5hexdigest
 
-from twisted.web.resource import getChildForRequest, ErrorPage
+from twisted.web.resource import getChildForRequest
+try:
+	# Twisted >= 9.0
+	from twisted.web.resource import ErrorPage
+except ImportError:
+	from twisted.web.error import ErrorPage
 
 _postImportVars = vars().keys()
 

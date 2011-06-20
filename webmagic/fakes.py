@@ -65,10 +65,21 @@ class FakeReactor(GetNewMixin):
 
 
 class DummyTCPTransport(StringTransport):
+	producer = None
+	streaming = None
 
 	def __init__(self, *args, **kwargs):
 		self.aborted = False
 		StringTransport.__init__(self, *args, **kwargs)
+
+
+	# Implement both registerProducer and unregisterProducer because
+	# they're only in Twisted >= 9.0
+	def registerProducer(self, producer, streaming):
+		if self.producer is not None:
+			raise RuntimeError("Cannot register two producers")
+		self.producer = producer
+		self.streaming = streaming
 
 
 	def unregisterProducer(self):

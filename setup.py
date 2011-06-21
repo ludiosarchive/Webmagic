@@ -21,4 +21,8 @@ setup(
 		'License :: OSI Approved :: MIT License',
 	],
 	packages=['webmagic', 'webmagic.test'],
+	install_requires=[
+		 'Twisted >= 8.2.0'
+		,'zope.interface'
+	],
 )

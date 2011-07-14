@@ -71,9 +71,6 @@ def getResourceForHref(request, href):
 	return getResourceForPath(site, joinedPath)
 
 
-# Match the length of a normal digest
-_zeroedDigest = "0" * len(md5hexdigest(""))
-
 def getBreakerForResource(fileCache, resource):
 	"""
 	@param fileCache: a L{filecache.FileCache}.

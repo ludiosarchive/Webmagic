@@ -12,10 +12,11 @@ from twisted.internet.task import Clock
 from twisted.web import http, server, resource
 
 from webmagic.filecache import FileCache
-from webmagic.fakes import DummyChannel, DummyRequest
+from webmagic.fakes import DummyChannel, DummyRequest, DummyTCPTransport
 from webmagic.untwist import (
 	CookieInstaller, BetterResource, RedirectingResource, HelpfulNoResource,
-	_CSSCacheEntry, BetterFile, ResponseCacheOptions, setCachingHeadersOnRequest
+	_CSSCacheEntry, BetterFile, ResponseCacheOptions,
+	setCachingHeadersOnRequest, BetterSite
 )
 
 
@@ -693,3 +694,40 @@ class TestsetCachingHeadersOnRequest(unittest.TestCase):
 			'Date': ['Thu, 01 Jan 1970 00:00:00 GMT'],
 			'Expires': ['-1']},
 		dict(request.responseHeaders.getAllRawHeaders()))
+
+
+
+class BetterSiteTests(unittest.TestCase):
+
+	def test_noDelayTrue(self):
+		"""
+		The default options for BetterSite cause NO_DELAY to be set to True
+		on new connections.
+		"""
+		br = BetterResource()
+		bs = BetterSite(br)
+		channel = bs.buildProtocol(None)
+		transport = DummyTCPTransport()
+		channel.makeConnection(transport)
+		self.assertTrue(transport.getTcpNoDelay())
+
+		# Lose the connection to clear HTTPChannel.timeOut, so we don't
+		# have a dirty reactor.
+		channel.connectionLost(None)
+
+
+	def test_noDelayFalse(self):
+		"""
+		If noDelay=False is passed to BetterSite, it does not set NO_DELAY
+		on new connections.
+		"""
+		br = BetterResource()
+		bs = BetterSite(br, noDelay=False)
+		channel = bs.buildProtocol(None)
+		transport = DummyTCPTransport()
+		channel.makeConnection(transport)
+		self.assertFalse(transport.getTcpNoDelay())
+
+		# Lose the connection to clear HTTPChannel.timeOut, so we don't
+		# have a dirty reactor.
+		channel.connectionLost(None)

@@ -592,35 +592,60 @@ class BetterFile(static.File):
 
 
 
-class ConnectionTrackingHTTPChannel(HTTPChannel):
+class _BetterHTTPChannel(HTTPChannel):
+	def connectionMade(self, *args, **kwargs):
+		HTTPChannel.connectionMade(self, *args, **kwargs)
+		if self.site._setNoDelayOnConnect and \
+		hasattr(self.transport, 'setTcpNoDelay'):
+			self.transport.setTcpNoDelay(True)
+
+
+
+class BetterSite(server.Site):
+	"""
+	A L{server.Site} with a few modifications:
+
+	*	Default idle (not serving a request) keep-alive timeout of 75 seconds
+		instead of 12 hours.
+
+	*	Sets TCP_NODELAY on all connections (unless disabled with
+		noDelay=False).
+	"""
+	protocol = _BetterHTTPChannel
+
+	def __init__(self, resource, logPath=None, timeout=75, noDelay=True):
+		server.Site.__init__(self, resource, logPath, timeout)
+		self._setNoDelayOnConnect = noDelay
+
+
+
+class ConnectionTrackingHTTPChannel(_BetterHTTPChannel):
 	"""
 	An L{HTTPChannel} that tells the factory about all connection
 	activity.
 	"""
-	__slots__ = ()
-
 	def __init__(self, *args, **kwargs):
-		HTTPChannel.__init__(self, *args, **kwargs)
+		_BetterHTTPChannel.__init__(self, *args, **kwargs)
 
 
 	def connectionMade(self, *args, **kwargs):
-		HTTPChannel.connectionMade(self, *args, **kwargs)
+		_BetterHTTPChannel.connectionMade(self, *args, **kwargs)
 		log.msg('Connection made: %r' % (self,))
 		self.factory.connections.add(self)
 
 
 	def connectionLost(self, *args, **kwargs):
-		HTTPChannel.connectionLost(self, *args, **kwargs)
+		_BetterHTTPChannel.connectionLost(self, *args, **kwargs)
 		log.msg('Connection lost: %r' % (self,))
 		self.factory.connections.remove(self)
 
 
 
-class ConnectionTrackingSite(server.Site):
+class ConnectionTrackingSite(BetterSite):
 	protocol = ConnectionTrackingHTTPChannel
 
 	def __init__(self, *args, **kwargs):
-		server.Site.__init__(self, *args, **kwargs)
+		BetterSite.__init__(self, *args, **kwargs)
 		self.connections = set()
 
 

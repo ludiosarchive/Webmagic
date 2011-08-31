@@ -70,6 +70,8 @@ class DummyTCPTransport(StringTransport):
 
 	def __init__(self, *args, **kwargs):
 		self.aborted = False
+		self.noDelayEnabled = False
+		self.keepAliveEnabled = False
 		StringTransport.__init__(self, *args, **kwargs)
 
 
@@ -96,6 +98,11 @@ class DummyTCPTransport(StringTransport):
 
 
 	def getTcpNoDelay(self):
+		"""
+		Returns the last value of setTcpNoDelay(value), or False, if never
+		called.  (Note that this might not match a real transport, if
+		NODELAY is enabled by default.)
+		"""
 		return self.noDelayEnabled
 
 
@@ -104,6 +111,11 @@ class DummyTCPTransport(StringTransport):
 
 
 	def getTcpKeepAlive(self):
+		"""
+		Returns the last value of setTcpKeepAlive(value), or False, if never
+		called.  (Note that this might not match a real transport, if
+		TCP keepalives are enabled by default.)
+		"""
 		return self.keepAliveEnabled
 
 

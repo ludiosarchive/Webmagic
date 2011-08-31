@@ -220,12 +220,15 @@ class RedirectingResource(resource.Resource):
 
 class BetterResource(resource.Resource):
 	"""
-	A L{resource.Resource} with two improvements:
+	A L{resource.Resource} with several improvements:
 
 	*	/page and /page/ are forced to be the same thing (/page is
 		redirected to /page/)
 
 	*	Additional response headers are set for security reasons.
+
+	*	Cache-related headers are removed if an exception was raised from
+		render().
 
 	Implementation notes:
 

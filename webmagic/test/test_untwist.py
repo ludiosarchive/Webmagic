@@ -709,6 +709,7 @@ class BetterSiteTests(unittest.TestCase):
 		channel = bs.buildProtocol(None)
 		transport = DummyTCPTransport()
 		channel.makeConnection(transport)
+		self.assertTrue(transport.everCalledSetTcpNoDelay())
 		self.assertTrue(transport.getTcpNoDelay())
 
 		# Lose the connection to clear HTTPChannel.timeOut, so we don't
@@ -719,14 +720,14 @@ class BetterSiteTests(unittest.TestCase):
 	def test_noDelayFalse(self):
 		"""
 		If noDelay=False is passed to BetterSite, it does not set NO_DELAY
-		on new connections.
+		on new connections, leaving the default option.
 		"""
 		br = BetterResource()
 		bs = BetterSite(br, noDelay=False)
 		channel = bs.buildProtocol(None)
 		transport = DummyTCPTransport()
 		channel.makeConnection(transport)
-		self.assertFalse(transport.getTcpNoDelay())
+		self.assertFalse(transport.everCalledSetTcpNoDelay())
 
 		# Lose the connection to clear HTTPChannel.timeOut, so we don't
 		# have a dirty reactor.

@@ -70,8 +70,8 @@ class DummyTCPTransport(StringTransport):
 
 	def __init__(self, *args, **kwargs):
 		self.aborted = False
-		self.noDelayEnabled = False
-		self.keepAliveEnabled = False
+		self.noDelayEnabled = None
+		self.keepAliveEnabled = None
 		StringTransport.__init__(self, *args, **kwargs)
 
 
@@ -103,7 +103,14 @@ class DummyTCPTransport(StringTransport):
 		called.  (Note that this might not match a real transport, if
 		NODELAY is enabled by default.)
 		"""
-		return self.noDelayEnabled
+		return bool(self.noDelayEnabled)
+
+
+	def everCalledSetTcpNoDelay(self):
+		"""
+		Returns True if setTcpNoDelay has ever been called, else False.
+		"""
+		return self.noDelayEnabled is not None
 
 
 	def setTcpKeepAlive(self, enabled):
@@ -116,7 +123,14 @@ class DummyTCPTransport(StringTransport):
 		called.  (Note that this might not match a real transport, if
 		TCP keepalives are enabled by default.)
 		"""
-		return self.keepAliveEnabled
+		return bool(self.keepAliveEnabled)
+
+
+	def everCalledSetTcpKeepAlive(self):
+		"""
+		Returns True if setTcpKeepAlive has ever been called, else False.
+		"""
+		return self.keepAliveEnabled is not None
 
 
 	# StringTransport.abortConnection doesn't exist at this writing

@@ -321,6 +321,7 @@ def loadCompatibleMimeTypes():
 		'.js': 'text/javascript',
 		'.ico': 'image/x-icon',
 		'.log': 'text/plain',
+		'.rst': 'text/plain',
 	})
 	return contentTypes
 

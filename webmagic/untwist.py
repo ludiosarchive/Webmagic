@@ -24,6 +24,7 @@ from zope.interface import implements
 from webmagic.transforms import md5hexdigest
 from webmagic.pathmanip import ICacheBreaker
 from webmagic.cssfixer import fixUrls
+from webmagic.safe_headers import setRawHeadersSafely
 
 _postImportVars = vars().keys()
 
@@ -210,11 +211,10 @@ class RedirectingResource(resource.Resource):
 	def render(self, request):
 		setDefaultHeadersOnRequest(request)
 		request.setResponseCode(self._code)
-		# TODO: add protection against response-splitting, or fix
-		# http://twistedmatrix.com/trac/ticket/3770
-		# Also, this is a relative redirect, so it is non-standard, but all
+		# This is a relative redirect, so it is non-standard, but all
 		# browsers accept it.
-		request.responseHeaders.setRawHeaders('location', [self._location])
+		setRawHeadersSafely(
+			request.responseHeaders, 'location', [self._location])
 		return self.template % {'escaped': cgi.escape(self._location)}
 
 

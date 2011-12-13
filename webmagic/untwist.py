@@ -210,9 +210,10 @@ class RedirectingResource(resource.Resource):
 	def render(self, request):
 		setDefaultHeadersOnRequest(request)
 		request.setResponseCode(self._code)
-		# twisted.web z9trunk protects against response-splitting, so we don't
-		# need to do anything to the Location header.
-		# Also, this is a relative redirect; non-standard, but all browsers accept it.
+		# TODO: add protection against response-splitting, or fix
+		# http://twistedmatrix.com/trac/ticket/3770
+		# Also, this is a relative redirect, so it is non-standard, but all
+		# browsers accept it.
 		request.responseHeaders.setRawHeaders('location', [self._location])
 		return self.template % {'escaped': cgi.escape(self._location)}
 

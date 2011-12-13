@@ -35,14 +35,9 @@ Wishlist
 *	In `webmagic.cssfixer`, use cssutils instead of a regexp to modify the CSS.
 
 
-Code style notes
-================
+Contributing
+============
 
-This package mostly follows the Divmod Coding Standard
-<http://replay.web.archive.org/http://divmod.org/trac/wiki/CodingStandard> with a few exceptions:
+Patches and pull requests are welcome.
 
-*	Use hard tabs for indentation.
-
-*	Use hard tabs only at the beginning of a line.
-
-*	Prefer to have lines <= 80 characters, but always less than 100.
+This coding standard applies: http://ludios.org/coding-standard/

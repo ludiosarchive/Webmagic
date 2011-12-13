@@ -179,7 +179,7 @@ class HelpfulNoResource(ErrorPage):
 
 	def render(self, request):
 		setDefaultHeadersOnRequest(request)
-		return resource.Resource.render(self, request)
+		return ErrorPage.render(self, request)
 
 
 

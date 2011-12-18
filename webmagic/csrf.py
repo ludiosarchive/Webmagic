@@ -60,7 +60,7 @@ def constantTimeCompare(s1, s2):
 
 class ICsrfStopper(Interface):
 	"""
-	TODO: docstring here
+	Interface for CSRF stoppers.
 
 	Note: Callers wrap with maybeDeferred." means that callers wrap this method with
 		L{twisted.internet.defer.maybeDeferred}, so you can return a

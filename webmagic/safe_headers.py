@@ -3,6 +3,11 @@ Header-setting functions for twisted.web.http_headers.Headers that protect
 against response-splitting attacks.
 """
 
+import sys
+
+_postImportVars = vars().keys()
+
+
 # The functions here are essentially a copy of
 # 3770-02-validation-in-Headers-and-server-logging.patch
 # from http://twistedmatrix.com/trac/ticket/3770
@@ -93,3 +98,8 @@ def addRawHeaderSafely(headers, name, value):
 	"""
 	checkHeaderValue(value)
 	headers.addRawHeader(name, value)
+
+
+try: from refbinder.api import bindRecursive
+except ImportError: pass
+else: bindRecursive(sys.modules[__name__], _postImportVars)

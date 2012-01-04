@@ -16,16 +16,55 @@ from twisted.test.proto_helpers import StringTransport
 
 _postImportVars = vars().keys()
 
+# Note: the use of "mock" and "dummy" in this file is totally inconsistent.
 
-# The use of "mock" and "dummy" in this file is totally inconsistent.
+
+class ListLog(list):
+	"""
+	A list with a .getNew() method that returns items not
+	yet returned by previous calls to .getNew().  This is useful when
+	writing mock objects that log calls:
+
+		log = ListLog()
+		log.append("one")
+		log.append("two")
+
+		self.assertEqual(["one", "two"], log.getNew())
+
+		log.append("three")
+
+		self.assertEqual(["three"], log.getNew())
+	"""
+	__slots__ = ('_lenBeforeLastGetNew',)
+
+	def getNew(self):
+		if not hasattr(self, '_lenBeforeLastGetNew'):
+			self._lenBeforeLastGetNew = 0
+
+		oldLen = self._lenBeforeLastGetNew
+		self._lenBeforeLastGetNew = len(self)
+
+		return self[oldLen:]
+
 
 
 class GetNewMixin(object):
-
+	"""
+	Deprecated.  Use a L{ListLog} instead.
+	"""
 	def getNew(self):
 		"""
 		Returns new log entries. This makes test code a lot less redundant.
 		"""
+		import warnings
+		warnings.warn("fakes.GetNewMixin is deprecated.  "
+			"Use a fakes.ListLog instead.")
+
+		if isinstance(self.log, ListLog):
+			return self.log.getNew()
+
+		# Support for legacy plain list
+
 		if not hasattr(self, '_returnNext'):
 			self._returnNext = 0
 
@@ -37,8 +76,13 @@ class GetNewMixin(object):
 
 
 class DumbLog(GetNewMixin):
-
+	"""
+	Deprecated.  Use a L{ListLog} instead.
+	"""
 	def __init__(self):
+		import warnings
+		warnings.warn("fakes.DumbLog is deprecated.  "
+			"Use a fakes.ListLog instead.")
 		self.log = []
 
 
@@ -51,12 +95,16 @@ class DumbLog(GetNewMixin):
 
 
 
-class FakeReactor(GetNewMixin):
+class FakeReactor(object):
 	# TODO: implements() IReactorCore interface? or whatever
 	# addSystemEventTrigger is part of?
 
 	def __init__(self, *args, **kargs):
-		self.log = []
+		self.log = ListLog()
+
+
+	def getNew(self):
+		return self.log.getNew()
 
 
 	def addSystemEventTrigger(self, *args):
@@ -260,13 +308,17 @@ class DummyRequest(_TwistedDummyRequest):
 
 
 
-class MockProducer(GetNewMixin):
+class MockProducer(object):
 	resumed = False
 	stopped = False
 	paused = False
 
 	def __init__(self):
-		self.log = []
+		self.log = ListLog()
+
+
+	def getNew(self):
+		return self.log.getNew()
 
 
 	def resumeProducing(self):

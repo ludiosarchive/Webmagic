@@ -317,8 +317,9 @@ def loadCompatibleMimeTypes():
 	# Read from Python's built-in mimetypes, but don't load any mimetypes
 	# from disk.
 	contentTypes = static.loadMimeTypes(mimetype_locations=())
-	# Send the mimetypes that Google sends. These were captured on 2010-06-09.
 	contentTypes.update({
+		# Use text/javascript instead of application/javascript for
+		# compatibility reasons.
 		'.js': 'text/javascript',
 		'.ico': 'image/x-icon',
 		'.log': 'text/plain',

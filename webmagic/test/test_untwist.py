@@ -170,6 +170,16 @@ class NonLeafWithNonLeafIndexChild(BetterResource):
 
 
 
+class DynamicBetterResource(BetterResource):
+	path = None
+	resource = BetterResource()
+
+	def getChild(self, path, request):
+		self.path = path
+		self.request = request
+		return self.resource
+
+
 class LeafPlainResource(resource.Resource):
 	isLeaf = True
 	def __init__(self):
@@ -355,6 +365,17 @@ class BetterResourceTests(unittest.TestCase):
 		site = self._makeSite(r)
 		res = site.getResourceFor(req)
 		self.assertTrue(isinstance(res, HelpfulNoResource), res)
+
+
+	def test_getChildCalledForNonexistentChild(self):
+		req = DummyRequest([''])
+		r = DynamicBetterResource()
+		uri = 'hello'
+
+		resource = r.getChildWithDefault(uri, req)
+		self.assertIs(resource, r.resource)
+		self.assertEqual(r.path, uri)
+		self.assertIs(r.request, req)
 
 
 	# Right now, the behavior is to 404 if there are any extra slashes,

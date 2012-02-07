@@ -261,14 +261,22 @@ class BetterResource(resource.Resource):
 
 	def getChild(self, path, request):
 		"""
+		Works like L{resource.Resource.getChild}:
+
+		Retrieve a 'child' resource from me.
+
+		Implement this to create dynamic resource generation -- resources which
+		are always available may be registered with self.putChild().
+
+		BetterResource-specific:
+
 		All that's implemented by default beyond a L{resource.Resource}
-		is to replace the no response page with a slightly more helpful
-		one.
+		is to replace the 404 page with a slightly better one.
 
 		Note that what L{getChildWithDefault} enforces on resources
 		with trailing crud, and what it implements for redirecting
 		paths without slashes, is not implemented here for dynamic
-		resources. Subclasses should implement this behavior themselves
+		resources.  Subclasses should implement this behavior themselves
 		if it is desired.
 		"""
 		if self._debugGetChild:

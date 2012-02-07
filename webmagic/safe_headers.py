@@ -8,10 +8,12 @@ import sys
 _postImportVars = vars().keys()
 
 
-# The functions here are essentially a copy of
-# 3770-02-validation-in-Headers-and-server-logging.patch
-# from http://twistedmatrix.com/trac/ticket/3770
-
+# We used to allow LF in the value if the next line were indented, but it
+# was discovered[1] that CR could be used to split a value into multiple
+# header fields, at least in Chrome and IE.  Therefore, to be safe against
+# other buggy HTTP peers, we no longer allow CR or LF anywhere in the header.
+#
+# [1] https://bugs.php.net/bug.php?id=60227
 def isValidHeaderValue(value):
 	"""
 	Checks whether the input string is a valid HTTP header value (i.e. does
@@ -23,18 +25,7 @@ def isValidHeaderValue(value):
 	@rtype: bool
 	@return: Whether the header value is valid.
 	"""
-	# The common case
-	if '\n' not in value:
-		return True
-
-	for i, c in enumerate(value):
-		if c == '\n':
-			# next byte or ""
-			next = value[i + 1:i + 2]
-			if next not in ("\t", " "):
-				return False
-
-	return True
+	return not ('\n' in value or '\r' in value)
 
 
 def checkHeaderValue(value):

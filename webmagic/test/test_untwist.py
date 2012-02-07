@@ -373,9 +373,9 @@ class BetterResourceTests(unittest.TestCase):
 		uri = 'hello'
 
 		resource = r.getChildWithDefault(uri, req)
-		self.assertIs(resource, r.resource)
+		self.assertIdentical(resource, r.resource)
 		self.assertEqual(r.path, uri)
-		self.assertIs(r.request, req)
+		self.assertIdentical(r.request, req)
 
 
 	# Right now, the behavior is to 404 if there are any extra slashes,

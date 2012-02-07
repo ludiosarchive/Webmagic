@@ -301,8 +301,8 @@ class BetterResource(resource.Resource):
 			log.msg("BetterResource: prepath=%r postpath=%r uri=%r" % (
 				request.prepath, request.postpath, request.uri))
 
-		# Like resource.Resource, allow getChild a chance to respond
-		# with a dynamic resource for paths that aren't in my children
+		# Like resource.Resource, give getChild a chance to respond
+		# with a dynamic resource for paths that aren't in self.children
 		if not path in self.children:
 			return self.getChild(path, request)
 

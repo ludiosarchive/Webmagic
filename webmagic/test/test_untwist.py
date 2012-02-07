@@ -185,12 +185,12 @@ class NonLeafPlainResource(resource.Resource):
 
 class DynamicBetterResource(BetterResource):
 	path = None
-	resource = BetterResource()
+	childResource = BetterResource()
 
 	def getChild(self, path, request):
 		self.path = path
 		self.request = request
-		return self.resource
+		return self.childResource
 
 
 
@@ -373,8 +373,8 @@ class BetterResourceTests(unittest.TestCase):
 		r = DynamicBetterResource()
 		uri = 'hello'
 
-		resource = r.getChildWithDefault(uri, req)
-		self.assertIdentical(resource, r.resource)
+		child = r.getChildWithDefault(uri, req)
+		self.assertIdentical(child, r.childResource)
 		self.assertEqual(r.path, uri)
 		self.assertIdentical(r.request, req)
 

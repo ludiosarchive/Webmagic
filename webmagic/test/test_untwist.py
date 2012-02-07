@@ -170,16 +170,6 @@ class NonLeafWithNonLeafIndexChild(BetterResource):
 
 
 
-class DynamicBetterResource(BetterResource):
-	path = None
-	resource = BetterResource()
-
-	def getChild(self, path, request):
-		self.path = path
-		self.request = request
-		return self.resource
-
-
 class LeafPlainResource(resource.Resource):
 	isLeaf = True
 	def __init__(self):
@@ -190,6 +180,17 @@ class LeafPlainResource(resource.Resource):
 class NonLeafPlainResource(resource.Resource):
 	def __init__(self):
 		resource.Resource.__init__(self)
+
+
+
+class DynamicBetterResource(BetterResource):
+	path = None
+	resource = BetterResource()
+
+	def getChild(self, path, request):
+		self.path = path
+		self.request = request
+		return self.resource
 
 
 

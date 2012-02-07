@@ -259,6 +259,24 @@ class BetterResource(resource.Resource):
 			raise
 
 
+	def getChild(self, path, request):
+		"""
+		All that's implemented by default beyond a L{resource.Resource}
+		is to replace the no response page with a slightly more helpful
+		one.
+
+		Note that what L{getChildWithDefault} enforces on resources
+		with trailing crud, and what it implements for redirecting
+		paths without slashes, is not implemented here for dynamic
+		resources. Subclasses should implement this behavior themselves
+		if it is desired.
+		"""
+		if self._debugGetChild:
+			log.msg("BetterResource: Returning 404 "
+				"because no suitable resource")
+		return HelpfulNoResource()
+
+
 	def getChildWithDefault(self, path, request):
 		"""
 		We want to serve the same 404 page for these two cases:
@@ -275,12 +293,10 @@ class BetterResource(resource.Resource):
 			log.msg("BetterResource: prepath=%r postpath=%r uri=%r" % (
 				request.prepath, request.postpath, request.uri))
 
-		# 404 requests for which there is no suitable Resource
+		# Like resource.Resource, allow getChild a chance to respond
+		# with a dynamic resource for paths that aren't in my children
 		if not path in self.children:
-			if self._debugGetChild:
-				log.msg("BetterResource: Returning 404 "
-					"because no suitable resource")
-			return HelpfulNoResource()
+			return self.getChild(path, request)
 
 		# 404 requests that have extra crud
 		if self.children[path].isLeaf and request.postpath not in ([], ['']):

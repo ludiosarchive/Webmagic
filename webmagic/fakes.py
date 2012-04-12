@@ -9,7 +9,7 @@ from zope.interface import implements
 from twisted.internet import address, interfaces, task
 
 from twisted.web import server, resource
-from twisted.web import http
+from twisted.web import http, http_headers
 from twisted.web.test.test_web import DummyRequest as _TwistedDummyRequest
 from twisted.test.proto_helpers import StringTransport
 #from twisted.internet.test.test_base import FakeReactor as _TwistedFakeReactor
@@ -267,6 +267,7 @@ class DummyRequest(_TwistedDummyRequest):
 		#     self.request.channel.transport.setTcpNoDelay(True)
 		self.channel = DummyChannel()
 
+		self.requestHeaders = http_headers.Headers()
 		self.received_cookies = {}
 
 
@@ -305,6 +306,10 @@ class DummyRequest(_TwistedDummyRequest):
 
 	def getCookie(self, name):
 		return self.received_cookies.get(name)
+
+
+	def getHost(self):
+		return self.channel.transport.getHost()
 
 
 

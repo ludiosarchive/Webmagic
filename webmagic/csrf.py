@@ -51,7 +51,7 @@ def constantTimeCompare(s1, s2):
 
 
 # Web browsers are annoying and send the user's cookie to the website
-# even when a page on another domain initiates the request. So, this is why
+# even when a page on another domain initiates the request.  So, this is why
 # we need to generate CSRF tokens, output them to webpages, and verify
 # CSRF tokens.
 
@@ -104,7 +104,7 @@ class RejectToken(Exception):
 class CsrfStopper(object):
 	"""
 	An implementation of L{ICsrfStopper} that uses a secret and hmac-sha256
-	to make and check tokens. Keeping the secret secret is of paramount
+	to make and check tokens.  Keeping the secret secret is of paramount
 	importance.  If the secret is leaked, anyone can CSRF someone else's
 	session.
 

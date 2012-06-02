@@ -293,7 +293,7 @@ class BetterResource(resource.Resource):
 				Why 404 these URLs? To make sure people know
 				it's not okay to link to them.
 
-		The implementation is not eager to add slashes first. If the resource
+		The implementation is not eager to add slashes first.  If the resource
 		won't be found anyway, it returns 404s instead of redirects.
 		"""
 		if self._debugGetChild:
@@ -313,7 +313,7 @@ class BetterResource(resource.Resource):
 					"because request has extra crud")
 			return HelpfulNoResource()
 
-		# Redirect from /page -> /page/ and so on. This needs to happen even
+		# Redirect from /page -> /page/ and so on.  This needs to happen even
 		# if not `self.children[path].isLeaf`.
 		# Note: static.File instances are not `isLeaf`
 		if request.postpath == [] and request.prepath[-1] != '' and \

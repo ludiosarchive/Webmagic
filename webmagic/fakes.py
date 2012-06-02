@@ -54,7 +54,7 @@ class GetNewMixin(object):
 	"""
 	def getNew(self):
 		"""
-		Returns new log entries. This makes test code a lot less redundant.
+		Returns new log entries.  This makes test code a lot less redundant.
 		"""
 		import warnings
 		warnings.warn("fakes.GetNewMixin is deprecated.  "
